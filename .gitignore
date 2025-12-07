@@ -168,3 +168,6 @@ claude-flow
 hive-mind-prompt-*.txt
 .claude/
 .agentic-qe/
+
+# Local packages (use npm registry versions)
+packages/
