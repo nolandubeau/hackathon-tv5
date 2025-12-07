@@ -1,10 +1,12 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPosterUrl } from '@/lib/tmdb';
 import type { Movie, TVShow, Genre } from '@/types/media';
 import type { Video } from '@/lib/tmdb';
+import { VideoPlayer } from './VideoPlayer';
 
 interface DetailHeroProps {
   content: Movie | TVShow;
@@ -13,10 +15,12 @@ interface DetailHeroProps {
 }
 
 export function DetailHero({ content, genres, videos }: DetailHeroProps) {
+  const [showTrailer, setShowTrailer] = useState(false);
   const posterUrl = getPosterUrl(content.posterPath);
-  const trailer = videos?.find(
-    (v) => v.type === 'Trailer' && v.site === 'YouTube'
-  );
+
+  // Find all YouTube videos for the player
+  const youtubeVideos = videos?.filter(v => v.site === 'YouTube') || [];
+  const trailer = youtubeVideos.find(v => v.type === 'Trailer');
 
   const year = content.releaseDate
     ? new Date(content.releaseDate).getFullYear()
@@ -139,10 +143,8 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
             {/* Actions */}
             <div className="flex flex-wrap justify-center md:justify-start gap-3">
               {trailer && (
-                <a
-                  href={`https://www.youtube.com/watch?v=${trailer.key}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  onClick={() => setShowTrailer(true)}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
                 >
                   <svg
@@ -157,7 +159,7 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
                     />
                   </svg>
                   Watch Trailer
-                </a>
+                </button>
               )}
               <button className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
                 <svg
@@ -179,6 +181,15 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
           </div>
         </div>
       </div>
+
+      {/* Video Player Modal */}
+      {showTrailer && youtubeVideos.length > 0 && (
+        <VideoPlayer
+          videos={youtubeVideos}
+          initialIndex={0}
+          onClose={() => setShowTrailer(false)}
+        />
+      )}
     </div>
   );
 }

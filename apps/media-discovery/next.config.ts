@@ -1,4 +1,5 @@
 import type { NextConfig } from 'next';
+import { withARW } from '@agent-ready-web/nextjs-plugin';
 
 const nextConfig: NextConfig = {
   // Enable standalone output for Docker/Cloud Run deployment
@@ -57,7 +58,7 @@ const nextConfig: NextConfig = {
         ],
       },
       {
-        source: '/llms/:path*.llm.md',
+        source: '/:path*.llm.md',
         headers: [
           {
             key: 'Cache-Control',
@@ -67,7 +68,27 @@ const nextConfig: NextConfig = {
             key: 'Content-Type',
             value: 'text/markdown; charset=utf-8',
           },
+          {
+            key: 'X-ARW-Version',
+            value: '0.1',
+          },
         ],
+      },
+    ];
+  },
+
+  // Rewrites for dynamic .llm.md files
+  async rewrites() {
+    return [
+      // Dynamic movie machine views: /movie/123.llm.md -> /api/movies/123/llm
+      {
+        source: '/movie/:id.llm.md',
+        destination: '/api/movies/:id/llm',
+      },
+      // Dynamic TV machine views: /tv/123.llm.md -> /api/tv/123/llm
+      {
+        source: '/tv/:id.llm.md',
+        destination: '/api/tv/:id/llm',
       },
     ];
   },
@@ -91,7 +112,7 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Exclude native modules from webpack bundling
+  // Exclude native modules from bundling (works with both Webpack and Turbopack)
   serverExternalPackages: [
     'ruvector',
     '@ruvector/core',
@@ -104,4 +125,31 @@ const nextConfig: NextConfig = {
   ],
 };
 
-export default nextConfig;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export default withARW({
+  ...nextConfig,
+  arw: {
+    autoGenerate: true, // We're using pre-generated machine views
+    outputDir: 'public',
+    manifest: {
+      siteName: 'AI Media Discovery - Agentics Hackathon',
+      homepage: 'https://media-discovery.agentics.org',
+      contact: 'hackathon@agentics.org',
+      policies: {
+        training: {
+          allowed: false,
+          note: 'Content metadata from TMDB. Training not permitted.',
+        },
+        inference: {
+          allowed: true,
+          restrictions: ['attribution_required', 'non_commercial'],
+        },
+        attribution: {
+          required: true,
+          format: 'link',
+          template: 'Powered by AI Media Discovery',
+        },
+      },
+    },
+  },
+} as any);

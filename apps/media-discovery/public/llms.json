@@ -1,0 +1,146 @@
+{
+  "version": "0.1",
+  "profile": "ARW-1",
+  "site": {
+    "name": "AI Media Discovery - Agentics Hackathon",
+    "description": "Discover movies and TV shows through natural language prompts and personalized recommendations",
+    "homepage": "https://media-discovery.agentics.org",
+    "contact": "hackathon@agentics.org"
+  },
+  "content": [
+    {
+      "url": "/",
+      "machine_view": "/index.llm.md",
+      "purpose": "browse",
+      "priority": "high",
+      "chunks": [
+        {
+          "id": "overview",
+          "heading": "Overview",
+          "description": "Page introduction and purpose"
+        },
+        {
+          "id": "search",
+          "heading": "Search",
+          "description": "Natural language search functionality"
+        },
+        {
+          "id": "trending",
+          "heading": "Trending",
+          "description": "Currently popular content"
+        },
+        {
+          "id": "recommendations",
+          "heading": "Recommendations",
+          "description": "Personalized content suggestions"
+        },
+        {
+          "id": "actions",
+          "heading": "Actions",
+          "description": "Available API actions"
+        }
+      ]
+    },
+    {
+      "url": "/search",
+      "machine_view": "/search.llm.md",
+      "purpose": "search",
+      "priority": "high",
+      "chunks": [
+        {
+          "id": "overview",
+          "heading": "Overview",
+          "description": "Search page introduction"
+        },
+        {
+          "id": "capabilities",
+          "heading": "Capabilities",
+          "description": "Semantic search features"
+        },
+        {
+          "id": "api",
+          "heading": "API",
+          "description": "Search API documentation"
+        },
+        {
+          "id": "filters",
+          "heading": "Filters",
+          "description": "Available search filters"
+        },
+        {
+          "id": "examples",
+          "heading": "Examples",
+          "description": "Example search queries"
+        },
+        {
+          "id": "actions",
+          "heading": "Actions",
+          "description": "Available actions"
+        }
+      ]
+    },
+    {
+      "url": "/discover",
+      "machine_view": "/discover.llm.md",
+      "purpose": "browse",
+      "priority": "medium",
+      "chunks": [
+        {
+          "id": "overview",
+          "heading": "Overview",
+          "description": "Discover page introduction"
+        },
+        {
+          "id": "categories",
+          "heading": "Categories",
+          "description": "Browse categories"
+        },
+        {
+          "id": "genres",
+          "heading": "Genres",
+          "description": "Movie and TV genres"
+        },
+        {
+          "id": "api",
+          "heading": "API",
+          "description": "Discover API documentation"
+        },
+        {
+          "id": "filters",
+          "heading": "Filters",
+          "description": "Available filters"
+        },
+        {
+          "id": "actions",
+          "heading": "Actions",
+          "description": "Available actions"
+        }
+      ]
+    },
+    {
+      "url": "/movie/[id]",
+      "machine_view": "/movie/[id].llm.md",
+      "purpose": "details",
+      "priority": "medium",
+      "chunks": null
+    },
+    {
+      "url": "/tv/[id]",
+      "machine_view": "/tv/[id].llm.md",
+      "purpose": "details",
+      "priority": "medium",
+      "chunks": null
+    }
+  ],
+  "policies": {
+    "training": {
+      "allowed": false
+    },
+    "inference": {
+      "allowed": true
+    },
+    "attribution": {
+      "required": true
+    }
+  }
+}

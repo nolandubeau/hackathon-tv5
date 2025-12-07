@@ -1,21 +1,49 @@
 /**
  * GEO Build Processor for Next.js Plugin
  * Automatically analyzes and enhances content during build
+ *
+ * Note: GEO functionality is optional. When @arw/geo is not available,
+ * this processor will use a stub implementation.
  */
 
-import { GEOOptimizer } from '@arw/geo';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import type { GEOConfig, GEOReport, PageAnalysis } from './types';
 
+// Stub GEOOptimizer when @arw/geo is not available
+class GEOOptimizerStub {
+  constructor(_config: any) {}
+
+  async analyze(_content: string, _options: any) {
+    // Return minimal analysis structure
+    return {
+      citations: [],
+      statistics: [],
+      quotations: [],
+      quality: { overall: 0.5 },
+      entities: [],
+    };
+  }
+}
+
+// Try to import real GEOOptimizer, fall back to stub
+let GEOOptimizer: any;
+try {
+  // Dynamic import to avoid build failure
+  GEOOptimizer = require('@arw/geo').GEOOptimizer;
+} catch {
+  GEOOptimizer = GEOOptimizerStub;
+  console.warn('[@arw/nextjs-plugin] @arw/geo not available, GEO features disabled');
+}
+
 export class GEOBuildProcessor {
   private config: GEOConfig;
-  private optimizer: GEOOptimizer;
+  private optimizer: InstanceType<typeof GEOOptimizer>;
 
   constructor(config: GEOConfig) {
     this.config = config;
 
-    // Initialize GEO optimizer
+    // Initialize GEO optimizer (uses stub if @arw/geo not available)
     this.optimizer = new GEOOptimizer({
       profile: config.profile,
       domain: config.domain,

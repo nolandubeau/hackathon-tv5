@@ -89,7 +89,7 @@ export function withARW(userNextConfig: NextConfig & { arw?: ARWNextConfig } = {
     ...nextConfig,
 
     // ✅ Build-system agnostic approach
-    // Add webpack hook for post-build generation
+    // Add webpack hook for post-build generation (production builds)
     webpack: (webpackConfig: any, context: any) => {
       // Apply user's webpack config if it exists
       const userWebpack = nextConfig.webpack;
@@ -122,6 +122,25 @@ export function withARW(userNextConfig: NextConfig & { arw?: ARWNextConfig } = {
       }
 
       return webpackConfig;
+    },
+
+    // ✅ Turbopack configuration (development and future production builds)
+    turbopack: {
+      // Merge user's turbopack config if it exists
+      ...(nextConfig.turbopack || {}),
+
+      // Turbopack uses a different approach than webpack for plugins
+      // We rely on DevWatcher (initialized above) for development file watching
+      // and webpack hooks for production builds
+
+      // Configure resolve extensions (standard config to acknowledge turbopack setup)
+      resolveExtensions: nextConfig.turbopack?.resolveExtensions || [
+        '.ts',
+        '.tsx',
+        '.js',
+        '.jsx',
+        '.json'
+      ],
     },
 
     // Add rewrites for ARW endpoints

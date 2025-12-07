@@ -2,42 +2,96 @@ version: 0.1
 profile: ARW-1
 
 site:
-  name: 'AI Media Discovery'
+  name: 'AI Media Discovery - Agentics Hackathon'
   description: 'Discover movies and TV shows through natural language prompts and personalized recommendations'
-  homepage: 'https://media-discovery.example.com'
-  contact: 'ai@media-discovery.example.com'
+  homepage: 'https://media-discovery.agentics.org'
+  contact: 'hackathon@agentics.org'
 
 # Main content areas
 content:
+  # Homepage with trending and personalized content
   - url: /
-    machine_view: /llms/home.llm.md
+    machine_view: /index.llm.md
     purpose: browse
     priority: high
-    description: 'Homepage with trending and personalized content'
+    chunks:
+      - id: overview
+        heading: 'Overview'
+        description: 'Page introduction and purpose'
+      - id: search
+        heading: 'Search'
+        description: 'Natural language search functionality'
+      - id: trending
+        heading: 'Trending'
+        description: 'Currently popular content'
+      - id: recommendations
+        heading: 'Recommendations'
+        description: 'Personalized content suggestions'
+      - id: actions
+        heading: 'Actions'
+        description: 'Available API actions'
 
+  # Natural language search for movies and TV shows
   - url: /search
-    machine_view: /llms/search.llm.md
+    machine_view: /search.llm.md
     purpose: search
     priority: high
-    description: 'Natural language search for movies and TV shows'
+    chunks:
+      - id: overview
+        heading: 'Overview'
+        description: 'Search page introduction'
+      - id: capabilities
+        heading: 'Capabilities'
+        description: 'Semantic search features'
+      - id: api
+        heading: 'API'
+        description: 'Search API documentation'
+      - id: filters
+        heading: 'Filters'
+        description: 'Available search filters'
+      - id: examples
+        heading: 'Examples'
+        description: 'Example search queries'
+      - id: actions
+        heading: 'Actions'
+        description: 'Available actions'
 
+  # Browse content by genre, year, and rating
   - url: /discover
-    machine_view: /llms/discover.llm.md
+    machine_view: /discover.llm.md
     purpose: browse
     priority: medium
-    description: 'Browse content by genre, year, and rating'
+    chunks:
+      - id: overview
+        heading: 'Overview'
+        description: 'Discover page introduction'
+      - id: categories
+        heading: 'Categories'
+        description: 'Browse categories'
+      - id: genres
+        heading: 'Genres'
+        description: 'Movie and TV genres'
+      - id: api
+        heading: 'API'
+        description: 'Discover API documentation'
+      - id: filters
+        heading: 'Filters'
+        description: 'Available filters'
+      - id: actions
+        heading: 'Actions'
+        description: 'Available actions'
 
+  # Movie details page (dynamic - generated via API)
   - url: /movie/[id]
-    machine_view: /api/movie/[id]/llm
+    machine_view: /movie/[id].llm.md
     purpose: details
     priority: medium
-    description: 'Movie details page'
 
+  # TV show details page (dynamic - generated via API)
   - url: /tv/[id]
-    machine_view: /api/tv/[id]/llm
+    machine_view: /tv/[id].llm.md
     purpose: details
     priority: medium
-    description: 'TV show details page'
 
 # Available actions for AI agents
 actions:
@@ -45,31 +99,56 @@ actions:
     name: 'Semantic Search'
     endpoint: /api/search
     method: POST
+    auth: none
     description: 'Search for movies and TV shows using natural language'
-    example_prompts:
-      - 'exciting sci-fi movies like Inception'
-      - 'heartwarming comedy for family movie night'
-      - 'dark thriller with plot twists'
-      - 'something to watch when I want to feel inspired'
 
   - id: get_recommendations
     name: 'Get Recommendations'
     endpoint: /api/recommendations
     method: POST
+    auth: none
     description: 'Get personalized content recommendations based on preferences'
 
   - id: discover_content
     name: 'Discover Content'
     endpoint: /api/discover
     method: GET
+    auth: none
     description: 'Browse trending and popular content'
+
+  - id: get_movie
+    name: 'Get Movie Details'
+    endpoint: /api/movies/[id]
+    method: GET
+    auth: none
+    description: 'Get full details for a specific movie'
+
+  - id: get_movie_llm
+    name: 'Get Movie Machine View'
+    endpoint: /movie/[id].llm.md
+    method: GET
+    auth: none
+    description: 'Get machine-readable view for a movie (dynamic)'
+
+  - id: get_tv
+    name: 'Get TV Show Details'
+    endpoint: /api/tv/[id]
+    method: GET
+    auth: none
+    description: 'Get full details for a specific TV show'
+
+  - id: get_tv_llm
+    name: 'Get TV Show Machine View'
+    endpoint: /tv/[id].llm.md
+    method: GET
+    auth: none
+    description: 'Get machine-readable view for a TV show (dynamic)'
 
 # Protocols supported
 protocols:
   - name: 'Media Discovery REST API'
     type: rest
     endpoint: /api
-    docs: /api/docs
 
 # Usage policies
 policies:

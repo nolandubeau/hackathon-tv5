@@ -1,172 +1,94 @@
 {
-  "version": "0.1",
+  "$schema": "https://arw.dev/schemas/arw-manifest.schema.json",
+  "version": "1.0",
   "profile": "ARW-1",
   "site": {
-    "name": "AI Media Discovery",
+    "name": "AI Media Discovery - Agentics Hackathon",
     "description": "Discover movies and TV shows through natural language prompts and personalized recommendations",
-    "homepage": "https://media-discovery.example.com",
-    "contact": "ai@media-discovery.example.com"
+    "homepage": "https://media-discovery.agentics.org",
+    "contact": "hackathon@agentics.org"
   },
-  "content": [
-    {
-      "url": "/",
-      "machine_view": "/llms/home.llm.md",
-      "purpose": "browse",
-      "priority": "high",
-      "description": "Homepage with trending and personalized content"
-    },
-    {
-      "url": "/search",
-      "machine_view": "/llms/search.llm.md",
-      "purpose": "search",
-      "priority": "high",
-      "description": "Natural language search for movies and TV shows"
-    },
-    {
-      "url": "/discover",
-      "machine_view": "/llms/discover.llm.md",
-      "purpose": "browse",
-      "priority": "medium",
-      "description": "Browse content by genre, year, and rating"
-    },
-    {
-      "url": "/movie/[id]",
-      "machine_view": "/api/movie/[id]/llm",
-      "purpose": "details",
-      "priority": "medium",
-      "description": "Movie details page"
-    },
-    {
-      "url": "/tv/[id]",
-      "machine_view": "/api/tv/[id]/llm",
-      "purpose": "details",
-      "priority": "medium",
-      "description": "TV show details page"
-    }
-  ],
+  "discovery": {
+    "llms_txt": "/llms.txt",
+    "content_index": "/.well-known/arw-content-index.json",
+    "policies": "/.well-known/arw-policies.json",
+    "sitemap": "/sitemap.xml"
+  },
+  "capabilities": {
+    "machine_views": true,
+    "chunking": true,
+    "actions": true,
+    "oauth": false,
+    "protocols": ["rest"]
+  },
   "actions": [
     {
       "id": "semantic_search",
       "name": "Semantic Search",
       "endpoint": "/api/search",
       "method": "POST",
-      "description": "Search for movies and TV shows using natural language queries",
-      "schema": {
-        "type": "object",
-        "properties": {
-          "query": {
-            "type": "string",
-            "description": "Natural language search query",
-            "examples": [
-              "exciting sci-fi movies like Inception",
-              "heartwarming comedy for family movie night",
-              "dark thriller with plot twists"
-            ]
-          },
-          "filters": {
-            "type": "object",
-            "properties": {
-              "mediaType": {
-                "type": "string",
-                "enum": ["movie", "tv", "all"]
-              },
-              "ratingMin": {
-                "type": "number",
-                "minimum": 0,
-                "maximum": 10
-              }
-            }
-          },
-          "explain": {
-            "type": "boolean",
-            "description": "Include AI-generated explanations for recommendations"
-          }
-        },
-        "required": ["query"]
-      }
+      "auth": "none",
+      "description": "Search for movies and TV shows using natural language"
     },
     {
       "id": "get_recommendations",
-      "name": "Get Personalized Recommendations",
+      "name": "Get Recommendations",
       "endpoint": "/api/recommendations",
       "method": "POST",
-      "description": "Get personalized content recommendations",
-      "schema": {
-        "type": "object",
-        "properties": {
-          "basedOn": {
-            "type": "object",
-            "properties": {
-              "contentId": { "type": "number" },
-              "mediaType": { "type": "string", "enum": ["movie", "tv"] }
-            }
-          },
-          "preferences": {
-            "type": "object",
-            "properties": {
-              "genres": { "type": "array", "items": { "type": "number" } },
-              "likedContentIds": { "type": "array", "items": { "type": "number" } }
-            }
-          }
-        }
-      }
+      "auth": "none",
+      "description": "Get personalized content recommendations based on preferences"
     },
     {
       "id": "discover_content",
       "name": "Discover Content",
       "endpoint": "/api/discover",
       "method": "GET",
-      "description": "Browse trending and popular content",
-      "schema": {
-        "type": "object",
-        "properties": {
-          "category": {
-            "type": "string",
-            "enum": ["trending", "popular", "discover"],
-            "default": "trending"
-          },
-          "type": {
-            "type": "string",
-            "enum": ["movie", "tv", "all"],
-            "default": "all"
-          },
-          "genres": {
-            "type": "string",
-            "description": "Comma-separated genre IDs"
-          },
-          "page": {
-            "type": "number",
-            "default": 1
-          }
-        }
-      }
+      "auth": "none",
+      "description": "Browse trending and popular content"
+    },
+    {
+      "id": "get_movie",
+      "name": "Get Movie Details",
+      "endpoint": "/api/movies/[id]",
+      "method": "GET",
+      "auth": "none",
+      "description": "Get full details for a specific movie"
+    },
+    {
+      "id": "get_movie_llm",
+      "name": "Get Movie Machine View",
+      "endpoint": "/movie/[id].llm.md",
+      "method": "GET",
+      "auth": "none",
+      "description": "Get machine-readable view for a movie (dynamic)"
+    },
+    {
+      "id": "get_tv",
+      "name": "Get TV Show Details",
+      "endpoint": "/api/tv/[id]",
+      "method": "GET",
+      "auth": "none",
+      "description": "Get full details for a specific TV show"
+    },
+    {
+      "id": "get_tv_llm",
+      "name": "Get TV Show Machine View",
+      "endpoint": "/tv/[id].llm.md",
+      "method": "GET",
+      "auth": "none",
+      "description": "Get machine-readable view for a TV show (dynamic)"
     }
   ],
   "protocols": [
     {
-      "name": "Media Discovery API",
+      "name": "Media Discovery REST API",
       "type": "rest",
-      "endpoint": "/api",
-      "description": "RESTful API for content discovery and recommendations"
+      "endpoint": "/api"
     }
   ],
-  "policies": {
-    "training": {
-      "allowed": false,
-      "note": "Content metadata from TMDB. Training not permitted."
-    },
-    "inference": {
-      "allowed": true,
-      "restrictions": ["attribution_required", "non_commercial"]
-    },
-    "attribution": {
-      "required": true,
-      "format": "link",
-      "template": "Powered by AI Media Discovery (https://media-discovery.example.com)"
-    },
-    "rate_limits": {
-      "authenticated": "1000 requests per minute",
-      "unauthenticated": "100 requests per minute"
-    }
+  "metadata": {
+    "last_updated": "2025-12-07T03:30:00.000000+00:00",
+    "generator": "arw-cli",
+    "spec_version": "1.0"
   }
 }

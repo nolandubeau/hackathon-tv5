@@ -39,6 +39,10 @@ export const defaultConfig: Required<ARWNextConfig> = {
     enableClientGeneration: false,
     cacheStrategy: 'memory',
     ttl: 3600000 // 1 hour
+  },
+  geo: {
+    enabled: false,
+    profile: 'ARW-2.1'
   }
 };
 
@@ -61,6 +65,10 @@ export function mergeConfig(userConfig: ARWNextConfig): Required<ARWNextConfig> 
     runtime: {
       ...defaultConfig.runtime,
       ...userConfig.runtime
+    },
+    geo: {
+      ...defaultConfig.geo,
+      ...userConfig.geo
     }
   };
 }

@@ -12,17 +12,18 @@ import { searchMulti, getSimilarMovies, getSimilarTVShows, discoverMovies, disco
 import { searchByEmbedding, getContentEmbedding, calculateSimilarity } from './vector-search';
 
 // Schema for parsed search intent
+// Using .nullish() to allow undefined, null, and empty values from AI responses
 const SearchIntentSchema = z.object({
-  mood: z.array(z.string()).optional().describe('Emotional tone or feeling (e.g., "exciting", "heartwarming", "dark")'),
-  themes: z.array(z.string()).optional().describe('Story themes (e.g., "redemption", "coming-of-age", "survival")'),
-  pacing: z.enum(['slow', 'medium', 'fast']).optional().describe('Preferred pacing of the content'),
-  era: z.string().optional().describe('Time period setting (e.g., "1980s", "modern", "futuristic")'),
-  setting: z.array(z.string()).optional().describe('Physical setting (e.g., "space", "urban", "underwater")'),
-  similar_to: z.array(z.string()).optional().describe('Similar movies/shows mentioned by user'),
-  avoid: z.array(z.string()).optional().describe('Elements to avoid (e.g., "gore", "jump scares")'),
-  genres: z.array(z.string()).optional().describe('Inferred genres from the query'),
-  keywords: z.array(z.string()).optional().describe('Key search terms extracted'),
-  mediaType: z.enum(['movie', 'tv', 'all']).optional().describe('Preferred media type'),
+  mood: z.array(z.string()).nullish().transform(v => v || undefined).describe('Emotional tone or feeling (e.g., "exciting", "heartwarming", "dark")'),
+  themes: z.array(z.string()).nullish().transform(v => v || undefined).describe('Story themes (e.g., "redemption", "coming-of-age", "survival")'),
+  pacing: z.enum(['slow', 'medium', 'fast']).nullish().transform(v => v || undefined).describe('Preferred pacing of the content'),
+  era: z.string().nullish().transform(v => v || undefined).describe('Time period setting (e.g., "1980s", "modern", "futuristic")'),
+  setting: z.array(z.string()).nullish().transform(v => v || undefined).describe('Physical setting (e.g., "space", "urban", "underwater")'),
+  similar_to: z.array(z.string()).nullish().transform(v => v || undefined).describe('Similar movies/shows mentioned by user'),
+  avoid: z.array(z.string()).nullish().transform(v => v || undefined).describe('Elements to avoid (e.g., "gore", "jump scares")'),
+  genres: z.array(z.string()).nullish().transform(v => v || undefined).describe('Inferred genres from the query'),
+  keywords: z.array(z.string()).nullish().transform(v => v || undefined).describe('Key search terms extracted'),
+  mediaType: z.enum(['movie', 'tv', 'all']).nullish().transform(v => v || undefined).describe('Preferred media type'),
 });
 
 const SearchFiltersSchema = z.object({

@@ -1,6 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ARWProvider } from '@agent-ready-web/nextjs-plugin/components';
 import { useState, type ReactNode } from 'react';
 
 export function Providers({ children }: { children: ReactNode }) {
@@ -17,6 +18,10 @@ export function Providers({ children }: { children: ReactNode }) {
   );
 
   return (
-    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <ARWProvider config={{ priority: 'high', purpose: 'media-discovery' }}>
+        {children}
+      </ARWProvider>
+    </QueryClientProvider>
   );
 }

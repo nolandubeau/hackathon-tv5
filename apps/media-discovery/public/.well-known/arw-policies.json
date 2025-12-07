@@ -1,0 +1,18 @@
+{
+  "$schema": "https://arw.dev/schemas/arw-policies.schema.json",
+  "training": {
+    "allowed": false,
+    "note": "Content may not be used for training AI models"
+  },
+  "inference": {
+    "allowed": true,
+    "restrictions": [
+      "Must provide attribution",
+      "Must respect rate limits"
+    ]
+  },
+  "attribution": {
+    "required": true,
+    "format": "link"
+  }
+}
