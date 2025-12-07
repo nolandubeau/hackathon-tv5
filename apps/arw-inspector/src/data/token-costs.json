@@ -1,0 +1,151 @@
+{
+  "version": "2025-01",
+  "updated": "2025-01-15",
+  "models": [
+    {
+      "provider": "Anthropic",
+      "model": "Claude 3.5 Sonnet",
+      "id": "claude-3-5-sonnet-20241022",
+      "inputCostPerMToken": 3.0,
+      "outputCostPerMToken": 15.0,
+      "contextWindow": 200000,
+      "category": "flagship"
+    },
+    {
+      "provider": "Anthropic",
+      "model": "Claude 3.5 Haiku",
+      "id": "claude-3-5-haiku-20241022",
+      "inputCostPerMToken": 0.8,
+      "outputCostPerMToken": 4.0,
+      "contextWindow": 200000,
+      "category": "fast"
+    },
+    {
+      "provider": "Anthropic",
+      "model": "Claude 3 Opus",
+      "id": "claude-3-opus-20240229",
+      "inputCostPerMToken": 15.0,
+      "outputCostPerMToken": 75.0,
+      "contextWindow": 200000,
+      "category": "premium"
+    },
+    {
+      "provider": "OpenAI",
+      "model": "GPT-4o",
+      "id": "gpt-4o",
+      "inputCostPerMToken": 2.5,
+      "outputCostPerMToken": 10.0,
+      "contextWindow": 128000,
+      "category": "flagship"
+    },
+    {
+      "provider": "OpenAI",
+      "model": "GPT-4o mini",
+      "id": "gpt-4o-mini",
+      "inputCostPerMToken": 0.15,
+      "outputCostPerMToken": 0.6,
+      "contextWindow": 128000,
+      "category": "fast"
+    },
+    {
+      "provider": "OpenAI",
+      "model": "GPT-4 Turbo",
+      "id": "gpt-4-turbo",
+      "inputCostPerMToken": 10.0,
+      "outputCostPerMToken": 30.0,
+      "contextWindow": 128000,
+      "category": "premium"
+    },
+    {
+      "provider": "Google",
+      "model": "Gemini 1.5 Pro",
+      "id": "gemini-1.5-pro",
+      "inputCostPerMToken": 1.25,
+      "outputCostPerMToken": 5.0,
+      "contextWindow": 2000000,
+      "category": "flagship"
+    },
+    {
+      "provider": "Google",
+      "model": "Gemini 1.5 Flash",
+      "id": "gemini-1.5-flash",
+      "inputCostPerMToken": 0.075,
+      "outputCostPerMToken": 0.3,
+      "contextWindow": 1000000,
+      "category": "fast"
+    },
+    {
+      "provider": "Google",
+      "model": "Gemini 2.0 Flash",
+      "id": "gemini-2.0-flash",
+      "inputCostPerMToken": 0.1,
+      "outputCostPerMToken": 0.4,
+      "contextWindow": 1000000,
+      "category": "fast"
+    },
+    {
+      "provider": "Meta",
+      "model": "Llama 3.3 70B (via Groq)",
+      "id": "llama-3.3-70b-groq",
+      "inputCostPerMToken": 0.59,
+      "outputCostPerMToken": 0.79,
+      "contextWindow": 128000,
+      "category": "flagship",
+      "note": "Groq hosted pricing"
+    },
+    {
+      "provider": "Meta",
+      "model": "Llama 3.1 8B (via Groq)",
+      "id": "llama-3.1-8b-groq",
+      "inputCostPerMToken": 0.05,
+      "outputCostPerMToken": 0.08,
+      "contextWindow": 128000,
+      "category": "fast",
+      "note": "Groq hosted pricing"
+    },
+    {
+      "provider": "xAI",
+      "model": "Grok Beta",
+      "id": "grok-beta",
+      "inputCostPerMToken": 5.0,
+      "outputCostPerMToken": 15.0,
+      "contextWindow": 131072,
+      "category": "flagship",
+      "note": "Early access pricing"
+    },
+    {
+      "provider": "Mistral",
+      "model": "Mistral Large",
+      "id": "mistral-large-latest",
+      "inputCostPerMToken": 2.0,
+      "outputCostPerMToken": 6.0,
+      "contextWindow": 128000,
+      "category": "flagship"
+    },
+    {
+      "provider": "Mistral",
+      "model": "Mistral Small",
+      "id": "mistral-small-latest",
+      "inputCostPerMToken": 0.2,
+      "outputCostPerMToken": 0.6,
+      "contextWindow": 128000,
+      "category": "fast"
+    },
+    {
+      "provider": "Perplexity",
+      "model": "Sonar",
+      "id": "sonar",
+      "inputCostPerMToken": 1.0,
+      "outputCostPerMToken": 1.0,
+      "contextWindow": 127000,
+      "category": "flagship",
+      "note": "Search-optimized"
+    }
+  ],
+  "notes": {
+    "pricing": "Costs are in USD per million tokens (input/output)",
+    "disclaimer": "Pricing may vary. Check provider websites for latest rates.",
+    "update_frequency": "This dataset should be updated quarterly or when major price changes occur",
+    "local_hosting": "Local/self-hosted models have zero API costs but require compute infrastructure"
+  }
+}

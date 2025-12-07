@@ -1,0 +1,59 @@
+/* Protocol Info Grid */
+.protocol-info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.protocol-info-card {
+  background: var(--color-bg);
+  border: 2px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s;
+}
+
+.protocol-info-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.protocol-info-card h3 {
+  color: var(--color-text);
+  font-size: 1.125rem;
+  margin-bottom: 0.75rem;
+}
+
+.protocol-info-card p {
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+
+.protocol-info-card ul {
+  color: var(--color-text-secondary);
+  line-height: 1.8;
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.protocol-info-card li {
+  margin: 0.25rem 0;
+}
+
+.info-link {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: color 0.2s;
+}
+
+.info-link:hover {
+  color: #1e40af;
+  text-decoration: underline;
+}

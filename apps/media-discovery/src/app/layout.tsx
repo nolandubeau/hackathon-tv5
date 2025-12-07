@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
 import { LLMPageLink } from '@/components/LLMPageLink';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'AI Media Discovery',
@@ -24,6 +21,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        {/* Fonts */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&display=swap"
+          rel="stylesheet"
+        />
         {/* ARW Discovery */}
         <link
           rel="alternate"
@@ -36,7 +40,7 @@ export default function RootLayout({
           href="/llms.txt"
         />
       </head>
-      <body className={inter.className}>
+      <body>
         <LLMPageLink />
         <Providers>{children}</Providers>
       </body>

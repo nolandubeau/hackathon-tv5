@@ -1,0 +1,12 @@
+/* YAML Display */
+.yaml-display {
+  border-radius: 8px;
+  overflow: hidden;
+  border: 2px solid var(--color-border);
+  background: #1e1e1e;
+}
+
+.yaml-display pre {
+  margin: 0 !important;
+  padding: 1.5rem !important;
+}

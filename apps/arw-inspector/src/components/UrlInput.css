@@ -1,0 +1,51 @@
+.url-input-form {
+  width: 100%;
+}
+
+.url-input-wrapper {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.url-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.95);
+  transition: all 0.2s;
+}
+
+.url-input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 1);
+  background: white;
+}
+
+.url-input:disabled {
+  background: rgba(255, 255, 255, 0.6);
+  cursor: not-allowed;
+}
+
+.inspect-button {
+  padding: 0.75rem 1.5rem;
+  background: var(--secondary);
+  color: var(--secondary-foreground);
+  border: none;
+  border-radius: 9999px;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: var(--font-mono);
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.inspect-button:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.inspect-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

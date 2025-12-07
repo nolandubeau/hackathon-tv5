@@ -1,0 +1,80 @@
+.file-card {
+  background: var(--color-bg);
+  padding: 2rem;
+  border-radius: 12px;
+  border: 2px solid var(--color-border);
+  transition: all 0.2s;
+}
+
+.file-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.file-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.file-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  color: var(--color-text);
+  font-family: 'Monaco', 'Courier New', monospace;
+}
+
+.file-description {
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+
+.file-content {
+  margin: 1.5rem 0;
+  border: 2px solid var(--color-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.file-content summary {
+  padding: 1rem 1.5rem;
+  background: var(--color-bg);
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--color-primary);
+  transition: background 0.2s;
+}
+
+.file-content summary:hover {
+  background: white;
+}
+
+.file-content[open] summary {
+  border-bottom: 2px solid var(--color-border);
+}
+
+.file-link {
+  display: inline-block;
+  color: var(--color-primary);
+  text-decoration: none;
+  font-family: 'Monaco', 'Courier New', monospace;
+  font-size: 0.875rem;
+  margin-top: 1rem;
+  transition: color 0.2s;
+}
+
+.file-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.error-text {
+  color: var(--color-error);
+  margin: 1rem 0;
+  padding: 1rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border-left: 4px solid var(--color-error);
+}

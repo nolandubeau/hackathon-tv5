@@ -1,0 +1,6 @@
+/* Well-Known Grid */
+.well-known-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
