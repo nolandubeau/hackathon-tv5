@@ -169,5 +169,6 @@ hive-mind-prompt-*.txt
 .claude/
 .agentic-qe/
 
-# Local packages (use npm registry versions)
-packages/
+# Local packages (use npm registry versions, except nextjs-plugin)
+packages/*
+!packages/nextjs-plugin/
