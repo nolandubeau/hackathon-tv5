@@ -172,3 +172,6 @@ hive-mind-prompt-*.txt
 # Local packages (use npm registry versions, except nextjs-plugin)
 packages/*
 !packages/nextjs-plugin/
+
+# Local repos
+repos/
