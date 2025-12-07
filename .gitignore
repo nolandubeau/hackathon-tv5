@@ -175,3 +175,5 @@ packages/*
 
 # Local repos
 repos/
+arw-docs/
+specs/
