@@ -7,7 +7,11 @@ import { SearchBar } from '@/components/SearchBar';
 import { TrendingSection } from '@/components/TrendingSection';
 import { RecommendationsSection } from '@/components/RecommendationsSection';
 import { AdminWidget } from '@/components/AdminWidget';
+import { DynamicHero } from '@/components/home/DynamicHero';
 import { useDiscoveryStore, GENRES } from '@/lib/discovery-store';
+import { getRecommendationWithSource } from '@/lib/recommendation-service';
+import type { Movie, TVShow } from '@/types/media';
+import type { RecommendationSource } from '@/lib/recommendation-service';
 
 export default function HomePage() {
   const {
@@ -16,6 +20,7 @@ export default function HomePage() {
     isTransitioning,
     setTransitioning,
     profileComplete,
+    showProfileMessage,
     startDiscovery,
     genres,
     clickSequence,
@@ -35,6 +40,9 @@ export default function HomePage() {
   const lastMousePos = useRef({ x: 0, y: 0, time: 0 });
   const confettiFiredRef = useRef(false);
   const [shuffledGenres, setShuffledGenres] = useState<typeof GENRES>([]);
+  const [heroContent, setHeroContent] = useState<{ content: Movie | TVShow; source: RecommendationSource } | null>(null);
+  const [isLoadingHero, setIsLoadingHero] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   const showContinueButton = totalTime > 8 || clickSequence.length >= 3;
 
@@ -130,6 +138,25 @@ export default function HomePage() {
   // Determine if user completed profiling properly (8+ sec OR 3+ clicks)
   const hasProfile = !(clickSequence.length === 0 || (totalTime <= 8 && clickSequence.length < 3));
 
+  // Fetch hero recommendation when profile is complete
+  useEffect(() => {
+    if (profileComplete && !heroContent && !isLoadingHero) {
+      setIsLoadingHero(true);
+      getRecommendationWithSource(primaryGenres)
+        .then((result) => {
+          if (result) {
+            setHeroContent(result);
+          }
+        })
+        .catch((error) => {
+          console.error('Error fetching hero recommendation:', error);
+        })
+        .finally(() => {
+          setIsLoadingHero(false);
+        });
+    }
+  }, [profileComplete, primaryGenres, heroContent, isLoadingHero]);
+
   // If profile is complete, show the main app
   if (profileComplete) {
     return (
@@ -138,15 +165,50 @@ export default function HomePage() {
         {process.env.NODE_ENV === 'development' && <AdminWidget />}
 
         {/* Top Navigation */}
-        <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
+        <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-20">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div className="headline-h3 text-text-primary">AI Media Discovery</div>
             <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
+              {/* Profile Time Badge */}
+              {hasProfile && showProfileMessage && (
+                <div className="flex items-center gap-2">
+                  <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-accent-cyan/20 border-2 border-accent-cyan/40">
+                    <span className="text-accent-cyan font-bold text-sm mono">
+                      {totalTime.toFixed(0)}s
+                    </span>
+                  </div>
+                  <span className="hidden md:inline text-text-secondary text-xs">
+                    to profile you
+                  </span>
+                </div>
+              )}
+
+              {/* Search Icon */}
+              <button
+                onClick={() => setShowSearch(!showSearch)}
+                className="p-2 hover:bg-bg-elevated rounded-lg transition-colors"
+                aria-label="Toggle search"
+              >
+                <svg
+                  className="w-5 h-5 text-text-secondary hover:text-accent-cyan transition-colors"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </button>
+
               <a
                 href="/llms.txt"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-text-secondary hover:text-accent-cyan transition-colors"
+                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
                 aria-label="LLM-readable site index"
               >
                 llms.txt
@@ -155,14 +217,14 @@ export default function HomePage() {
                 href="/.well-known/arw-manifest.json"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-text-secondary hover:text-accent-cyan transition-colors"
+                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
                 aria-label="ARW machine-readable API manifest"
               >
                 ARW Manifest
               </a>
               <Link
                 href="/about"
-                className="text-text-secondary hover:text-accent-cyan transition-colors"
+                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
               >
                 About ARW
               </Link>
@@ -170,29 +232,56 @@ export default function HomePage() {
           </div>
         </nav>
 
-        {/* Hero Section */}
-        <section className="relative py-16 md:py-24 px-4 text-center bg-gradient-to-b from-accent-cyan/10 to-transparent">
-          {hasProfile && (
-            <>
-              <h1 className="headline-hero mb-4 text-text-primary">
-                Curated for You
-              </h1>
-              <p className="text-lg md:text-xl text-text-secondary mb-4 max-w-2xl mx-auto">
-                Based on your unique viewing style.
-              </p>
-            </>
-          )}
-          {/* Time saved badge - only show if user completed profiling */}
-          {hasProfile && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-bg-primary border border-border-subtle rounded-full mb-10">
-              <span className="text-accent-cyan font-bold mono">{totalTime.toFixed(0)}s</span>
-              <span className="text-text-secondary text-sm">to profile you, not 45 minutes</span>
-            </div>
-          )}
+        {/* Collapsible Search Section */}
+        {showSearch && (
+          <div className="sticky top-[73px] z-10 bg-bg-primary/95 backdrop-blur-sm border-b border-border-subtle py-6 px-4 animate-slide-down">
+            <div className="max-w-3xl mx-auto">
+              <Suspense fallback={<SearchBarSkeleton />}>
+                <SearchBar />
+              </Suspense>
 
-          {/* Disclosure if user skipped or didn't select */}
-          {!hasProfile && (
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-genre-comedy/10 border border-genre-comedy/30 rounded-full mb-10">
+              {/* Example Prompts */}
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                {[
+                  'sci-fi adventure',
+                  'romantic comedy',
+                  'psychological thriller',
+                  'inspiring true story',
+                ].map((prompt) => (
+                  <Link
+                    key={prompt}
+                    href={`/search?q=${encodeURIComponent(prompt)}`}
+                    className="px-4 py-1.5 text-xs bg-bg-elevated text-text-primary border border-border-subtle rounded-full hover:bg-bg-primary hover:border-accent-cyan transition-all"
+                  >
+                    {prompt}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Dynamic Hero Section */}
+        {isLoadingHero && (
+          <div className="py-20 text-center">
+            <div className="inline-block animate-pulse">
+              <div className="h-8 w-64 bg-bg-elevated rounded mb-4" />
+              <div className="h-4 w-96 bg-bg-elevated rounded" />
+            </div>
+          </div>
+        )}
+        {!isLoadingHero && heroContent && (
+          <DynamicHero
+            content={heroContent.content}
+            source={heroContent.source}
+            preferences={hasProfile ? primaryGenres : undefined}
+          />
+        )}
+
+        {/* Profile Completion Message */}
+        {!hasProfile && (
+          <div className="py-8 px-4 text-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-genre-comedy/10 border border-genre-comedy/30 rounded-full">
               <span className="text-genre-comedy text-sm">
                 {clickSequence.length === 0
                   ? "You didn't select any genres — showing general recommendations"
@@ -200,33 +289,8 @@ export default function HomePage() {
                 }
               </span>
             </div>
-          )}
-
-          {/* Search Bar */}
-          <div className="max-w-3xl mx-auto">
-            <Suspense fallback={<SearchBarSkeleton />}>
-              <SearchBar />
-            </Suspense>
           </div>
-
-          {/* Example Prompts */}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {[
-              'sci-fi adventure',
-              'romantic comedy',
-              'psychological thriller',
-              'inspiring true story',
-            ].map((prompt) => (
-              <Link
-                key={prompt}
-                href={`/search?q=${encodeURIComponent(prompt)}`}
-                className="px-5 py-2.5 text-sm bg-bg-elevated text-text-primary border border-border-subtle rounded-full hover:bg-bg-primary hover:border-accent-cyan hover:-translate-y-0.5 transition-all"
-              >
-                {prompt}
-              </Link>
-            ))}
-          </div>
-        </section>
+        )}
 
         {hasProfile ? (
           <section className="py-12 px-4 md:px-8">
