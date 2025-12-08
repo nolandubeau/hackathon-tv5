@@ -25,9 +25,8 @@ export function SearchBar() {
     <form onSubmit={handleSubmit} className="relative group">
       {/* Animated border wrapper - always animating, more intense on focus */}
       <div
-        className={`absolute -inset-[2px] rounded-2xl transition-all duration-300 bg-gradient-to-r from-accent-cyan via-genre-scifi to-accent-cyan bg-[length:200%_100%] ${
-          isFocused ? 'opacity-100' : 'opacity-40'
-        }`}
+        className={`absolute -inset-[2px] rounded-2xl transition-all duration-300 bg-gradient-to-r from-accent-cyan via-genre-scifi to-accent-cyan bg-[length:200%_100%] ${isFocused ? 'opacity-100' : 'opacity-40'
+          }`}
         style={{
           animation: 'gradientShift 3s ease infinite',
         }}

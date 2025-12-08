@@ -12,7 +12,7 @@ export default function AboutPage() {
       <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 text-text-secondary hover:text-accent-cyan transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -431,7 +431,7 @@ export default function AboutPage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/"
+              href="/home"
               className="btn-primary rounded px-8 py-3"
             >
               Start Discovering

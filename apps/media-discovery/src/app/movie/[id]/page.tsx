@@ -71,68 +71,106 @@ export default function MoviePage({
 
   return (
     <main className="min-h-screen bg-gray-950">
-      {/* Top Navigation */}
-      <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-          <Link
-            href="/home"
-            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+      {/* Top Navigation - Same as home page */}
+      <div className="fixed top-0 right-0 z-20 p-4 flex items-center gap-3">
+        {/* Back to Home Icon */}
+        <Link
+          href="/home"
+          onMouseEnter={playHover}
+          onClick={playClick}
+          className="p-2 bg-bg-primary/80 backdrop-blur-sm hover:bg-bg-elevated rounded-full transition-colors shadow-lg border border-border-subtle"
+          aria-label="Back to home"
+        >
+          <svg
+            className="w-5 h-5 text-text-secondary hover:text-accent-cyan transition-colors"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            />
+          </svg>
+        </Link>
+
+        {/* Menu Dropdown */}
+        <div className="relative">
+          <button
+            onClick={() => {
+              playClick();
+              const menu = document.getElementById('detail-menu');
+              menu?.classList.toggle('hidden');
+            }}
             onMouseEnter={playHover}
-            onClick={playClick}
+            className="p-2 bg-bg-primary/80 backdrop-blur-sm hover:bg-bg-elevated rounded-full transition-colors shadow-lg border border-border-subtle"
+            aria-label="Open menu"
           >
             <svg
-              xmlns="http://www.w3.org/2000/svg"
+              className="w-5 h-5 text-text-secondary hover:text-accent-cyan transition-colors"
               fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth={1.5}
               stroke="currentColor"
-              className="w-5 h-5"
+              viewBox="0 0 24 24"
             >
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
-                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
               />
             </svg>
-            Back
-          </Link>
-          <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
-            <a
-              href="/llms.txt"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="LLM-readable site index"
-              onMouseEnter={playHover}
-              onClick={playClick}
-            >
-              llms.txt
-            </a>
-            <a
-              href="/.well-known/arw-manifest.json"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="ARW machine-readable API manifest"
-              onMouseEnter={playHover}
-              onClick={playClick}
-            >
-              ARW Manifest
-            </a>
-            <a
-              href={`/movie/${movieId}.llm.md`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
-              aria-label="Machine-readable version of this page"
-              onMouseEnter={playHover}
-              onClick={playClick}
-            >
-              Agent View
-            </a>
+          </button>
+
+          {/* Dropdown Menu */}
+          <div
+            id="detail-menu"
+            className="hidden absolute right-0 mt-2 w-[200px] bg-bg-primary/95 backdrop-blur-xl border border-border-subtle rounded-lg shadow-2xl overflow-hidden"
+          >
+            <div className="p-2">
+              <a
+                href="/.well-known/arw-manifest.json"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                onMouseEnter={playHover}
+                onClick={playClick}
+              >
+                ARW Manifest
+              </a>
+              <a
+                href="/llms.txt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                onMouseEnter={playHover}
+                onClick={playClick}
+              >
+                llms.txt
+              </a>
+              <a
+                href={`/movie/${movieId}.llm.md`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                onMouseEnter={playHover}
+                onClick={playClick}
+              >
+                Agent View
+              </a>
+              <Link
+                href="/about"
+                className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                onMouseEnter={playHover}
+                onClick={playClick}
+              >
+                About
+              </Link>
+            </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Backdrop */}
       <Backdrop path={movie.backdropPath} title={movie.title} />

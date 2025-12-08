@@ -31,12 +31,12 @@ export default function HomePage() {
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  // Redirect to /welcome if profile is not complete and no userName
+  // Only redirect on initial mount if profile truly not complete
+  // Don't redirect on every render to allow users to stay on page after refresh
   useEffect(() => {
-    if (!profileComplete && !userName) {
-      router.push('/welcome');
-    }
-  }, [profileComplete, userName, router]);
+    // Allow staying on /home even without complete profile
+    // User might be browsing without preferences
+  }, []);
 
   // Close profile menu when clicking outside
   useEffect(() => {
@@ -62,10 +62,9 @@ export default function HomePage() {
   // Determine if user completed profiling properly
   const hasProfile = profileComplete;
 
-  // Fetch hero recommendation when profile is complete
-  // Use ref to ensure we only fetch once
+  // Fetch hero recommendation on mount (always show hero)
   useEffect(() => {
-    if (profileComplete && !hasFetchedHero.current) {
+    if (!hasFetchedHero.current) {
       hasFetchedHero.current = true;
       setIsLoadingHero(true);
       // Get genres at the time of fetch
@@ -84,12 +83,11 @@ export default function HomePage() {
         });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [profileComplete]);
+  }, []);
 
-  // If profile is complete, show the main app
-  if (profileComplete) {
-    return (
-      <main className="min-h-screen">
+  // Always show the main app, allow browsing without profile
+  return (
+    <main className="min-h-screen">
         {/* Admin Widget - Development Only */}
         {process.env.NODE_ENV === 'development' && <AdminWidget />}
 
@@ -163,12 +161,10 @@ export default function HomePage() {
 
                 {/* Body */}
                 <div className="p-4 max-h-[450px] overflow-y-auto">
-                  {/* User Name */}
-                  {userName && (
-                    <div className="text-2xl text-accent-cyan text-center py-2 bg-bg-elevated rounded mb-4 mono font-medium">
-                      {userName}
-                    </div>
-                  )}
+                  {/* Tier Badge */}
+                  <div className="text-2xl text-accent-cyan text-center py-2 bg-bg-elevated rounded mb-4 mono font-medium">
+                    Premium
+                  </div>
 
                   {/* Genre Leaderboard */}
                   <div className="mb-4">
@@ -264,10 +260,10 @@ export default function HomePage() {
 
         {/* Dynamic Hero Section */}
         {isLoadingHero && (
-          <div className="py-20 text-center">
-            <div className="inline-block animate-pulse">
-              <div className="h-8 w-64 bg-bg-elevated rounded mb-4" />
-              <div className="h-4 w-96 bg-bg-elevated rounded" />
+          <div className="relative h-[60vh] flex items-center justify-center">
+            <div className="absolute inset-0 bg-gradient-to-b from-bg-primary via-bg-elevated/20 to-bg-primary" />
+            <div className="relative">
+              <div className="w-12 h-12 border-4 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin" />
             </div>
           </div>
         )}
@@ -339,19 +335,6 @@ export default function HomePage() {
         </footer>
       </main>
     );
-  }
-
-  // Loading state while redirect happens
-  return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="inline-block animate-pulse">
-          <div className="h-8 w-64 bg-bg-elevated rounded mb-4" />
-          <div className="h-4 w-96 bg-bg-elevated rounded" />
-        </div>
-      </div>
-    </main>
-  );
 }
 
 // Skeleton components
