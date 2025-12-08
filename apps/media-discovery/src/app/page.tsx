@@ -141,12 +141,32 @@ export default function HomePage() {
         <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
             <div className="headline-h3 text-text-primary">AI Media Discovery</div>
-            <Link
-              href="/about"
-              className="text-text-secondary hover:text-accent-cyan transition-colors text-sm md:text-base"
-            >
-              About ARW
-            </Link>
+            <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
+              <a
+                href="/llms.txt"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-secondary hover:text-accent-cyan transition-colors"
+                aria-label="LLM-readable site index"
+              >
+                llms.txt
+              </a>
+              <a
+                href="/.well-known/arw-manifest.json"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-text-secondary hover:text-accent-cyan transition-colors"
+                aria-label="ARW machine-readable API manifest"
+              >
+                ARW Manifest
+              </a>
+              <Link
+                href="/about"
+                className="text-text-secondary hover:text-accent-cyan transition-colors"
+              >
+                About ARW
+              </Link>
+            </div>
           </div>
         </nav>
 
@@ -254,7 +274,7 @@ export default function HomePage() {
             </a>{' '}
             &bull; Global Hackathon TV5MONDE
           </p>
-          <p className="flex flex-wrap items-center justify-center gap-2 mb-3">
+          <p className="flex flex-wrap items-center justify-center gap-2">
             Powered by{' '}
             <a href="https://www.themoviedb.org/" className="underline hover:text-accent-cyan">
               TMDB
@@ -262,44 +282,8 @@ export default function HomePage() {
             &bull; Built with{' '}
             <a href="https://arw.dev" className="underline hover:text-accent-cyan">
               ARW
-            </a>{' '}
-            &bull;{' '}
-            <Link href="/about" className="underline hover:text-accent-cyan">
-              About
-            </Link>
+            </a>
           </p>
-          <div className="mt-3 flex items-center justify-center gap-4 flex-wrap">
-            <a
-              href="/llms.txt"
-              className="inline-flex items-center gap-1.5 hover:text-accent-cyan transition-colors"
-              aria-label="LLM-readable site index"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-              </svg>
-              llms.txt
-            </a>
-            <a
-              href="/llms.md"
-              className="inline-flex items-center gap-1.5 hover:text-accent-cyan transition-colors"
-              aria-label="Human-readable AI documentation"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
-              </svg>
-              AI Docs
-            </a>
-            <a
-              href="/.well-known/arw-manifest.json"
-              className="inline-flex items-center gap-1.5 hover:text-accent-cyan transition-colors"
-              aria-label="ARW machine-readable API manifest"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 6.75 22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3-4.5 16.5" />
-              </svg>
-              API Manifest
-            </a>
-          </div>
         </footer>
       </main>
     );
@@ -310,16 +294,6 @@ export default function HomePage() {
     <main className="min-h-screen">
       {/* Admin Widget - Development Only */}
       {process.env.NODE_ENV === 'development' && <AdminWidget />}
-
-      {/* Top Navigation - Discovery Flow */}
-      <nav className="absolute top-0 right-0 z-10 p-4">
-        <Link
-          href="/about"
-          className="text-text-secondary hover:text-accent-cyan transition-colors text-sm"
-        >
-          About ARW
-        </Link>
-      </nav>
 
       {/* SCREEN 1: SIGN-IN */}
       <section

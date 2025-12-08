@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
-import { LLMPageLink } from '@/components/LLMPageLink';
 
 export const metadata: Metadata = {
   title: 'AI Media Discovery',
@@ -41,7 +40,6 @@ export default function RootLayout({
         />
       </head>
       <body>
-        <LLMPageLink />
         <Providers>{children}</Providers>
       </body>
     </html>

@@ -69,17 +69,60 @@ export default function MoviePage({
 
   return (
     <main className="min-h-screen bg-gray-950">
-      {/* Back button */}
-      <div className="fixed top-4 left-4 z-50">
-        <Link
-          href="/"
-          className="flex items-center justify-center w-10 h-10 bg-gray-900/80 hover:bg-gray-800 backdrop-blur-sm rounded-full transition-colors"
-        >
-          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-        </Link>
-      </div>
+      {/* Top Navigation */}
+      <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+            Back
+          </Link>
+          <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
+            <a
+              href="/llms.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label="LLM-readable site index"
+            >
+              llms.txt
+            </a>
+            <a
+              href="/.well-known/arw-manifest.json"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label="ARW machine-readable API manifest"
+            >
+              ARW Manifest
+            </a>
+            <a
+              href={`/movie/${movieId}.llm.md`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white transition-colors"
+              aria-label="Machine-readable version of this page"
+            >
+              Agent View
+            </a>
+          </div>
+        </div>
+      </nav>
 
       {/* Backdrop */}
       <Backdrop path={movie.backdropPath} title={movie.title} />

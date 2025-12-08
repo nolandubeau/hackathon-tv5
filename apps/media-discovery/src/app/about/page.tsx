@@ -10,7 +10,7 @@ export default function AboutPage() {
     <main className="min-h-screen bg-gradient-to-b from-bg-elevated to-bg-primary">
       {/* Navigation */}
       <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-7xl mx-auto px-4 py-4">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link
             href="/"
             className="inline-flex items-center gap-2 text-text-secondary hover:text-accent-cyan transition-colors"
@@ -20,6 +20,26 @@ export default function AboutPage() {
             </svg>
             Back to Discovery
           </Link>
+          <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
+            <a
+              href="/llms.txt"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-secondary hover:text-accent-cyan transition-colors"
+              aria-label="LLM-readable site index"
+            >
+              llms.txt
+            </a>
+            <a
+              href="/.well-known/arw-manifest.json"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-text-secondary hover:text-accent-cyan transition-colors"
+              aria-label="ARW machine-readable API manifest"
+            >
+              ARW Manifest
+            </a>
+          </div>
         </div>
       </nav>
 
