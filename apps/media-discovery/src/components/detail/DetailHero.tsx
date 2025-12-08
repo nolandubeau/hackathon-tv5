@@ -16,6 +16,7 @@ interface DetailHeroProps {
 
 export function DetailHero({ content, genres, videos }: DetailHeroProps) {
   const [showTrailer, setShowTrailer] = useState(false);
+  const [showWatchlistLabel, setShowWatchlistLabel] = useState(false);
   const posterUrl = getPosterUrl(content.posterPath);
 
   // Find all YouTube videos for the player
@@ -145,7 +146,7 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
               {trailer && (
                 <button
                   onClick={() => setShowTrailer(true)}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-accent-cyan hover:bg-accent-cyan/90 text-gray-950 font-medium rounded transition-colors"
                 >
                   <svg
                     className="w-5 h-5"
@@ -158,10 +159,14 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
                       clipRule="evenodd"
                     />
                   </svg>
-                  Watch Trailer
+                  Play Trailer
                 </button>
               )}
-              <button className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
+              <button
+                className="relative inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded transition-all overflow-hidden group"
+                onMouseEnter={() => setShowWatchlistLabel(true)}
+                onMouseLeave={() => setShowWatchlistLabel(false)}
+              >
                 <svg
                   className="w-5 h-5"
                   fill="none"
@@ -175,7 +180,15 @@ export function DetailHero({ content, genres, videos }: DetailHeroProps) {
                     d="M12 4v16m8-8H4"
                   />
                 </svg>
-                Add to Watchlist
+                <span
+                  className={`transition-all duration-300 ${
+                    showWatchlistLabel
+                      ? 'max-w-[200px] opacity-100'
+                      : 'max-w-0 opacity-0'
+                  } overflow-hidden whitespace-nowrap`}
+                >
+                  Add to Watchlist
+                </span>
               </button>
             </div>
           </div>

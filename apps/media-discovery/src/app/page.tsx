@@ -2,6 +2,7 @@
 
 import { Suspense, useEffect, useRef, useCallback, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { SearchBar } from '@/components/SearchBar';
 import { TrendingSection } from '@/components/TrendingSection';
@@ -15,118 +16,39 @@ import type { RecommendationSource } from '@/lib/recommendation-service';
 
 export default function HomePage() {
   const {
-    currentScreen,
-    setScreen,
-    isTransitioning,
-    setTransitioning,
     profileComplete,
-    showProfileMessage,
-    startDiscovery,
-    genres,
-    clickSequence,
-    totalTime,
-    updateTotalTime,
-    onHoverEnter,
-    onHoverLeave,
-    onThumbnailClick,
-    trackVelocity,
-    startTime,
-    completeProfile,
     getGenreScores,
-    initializeGenres,
+    userName,
   } = useDiscoveryStore();
 
-  const timerRef = useRef<number | null>(null);
-  const lastMousePos = useRef({ x: 0, y: 0, time: 0 });
-  const confettiFiredRef = useRef(false);
-  const [shuffledGenres, setShuffledGenres] = useState<typeof GENRES>([]);
+  const router = useRouter();
+
+  const profileMenuRef = useRef<HTMLDivElement>(null);
   const [heroContent, setHeroContent] = useState<{ content: Movie | TVShow; source: RecommendationSource } | null>(null);
   const [isLoadingHero, setIsLoadingHero] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
-  const showContinueButton = totalTime > 8 || clickSequence.length >= 3;
-
-  // Fire confetti when profile is ready
+  // Redirect to /welcome if profile is not complete and no userName
   useEffect(() => {
-    if (showContinueButton && currentScreen === 'discovery' && !confettiFiredRef.current) {
-      confettiFiredRef.current = true;
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.9 },
-        colors: ['#4ECDC4', '#FF6B6B', '#FFE66D', '#A855F7'],
-      });
+    if (!profileComplete && !userName) {
+      router.push('/welcome');
     }
-  }, [showContinueButton, currentScreen]);
+  }, [profileComplete, userName, router]);
 
-  // Reset confetti flag when discovery restarts
+  // Close profile menu when clicking outside
   useEffect(() => {
-    if (currentScreen === 'signin') {
-      confettiFiredRef.current = false;
+    const handleClickOutside = (event: MouseEvent) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target as Node)) {
+        setShowProfileMenu(false);
+      }
+    };
+
+    if (showProfileMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
     }
-  }, [currentScreen]);
-
-  // Initialize genres on mount
-  useEffect(() => {
-    initializeGenres();
-  }, [initializeGenres]);
-
-  // Shuffle genres when entering discovery screen
-  useEffect(() => {
-    if (currentScreen === 'discovery') {
-      setShuffledGenres([...GENRES].sort(() => Math.random() - 0.5));
-    }
-  }, [currentScreen]);
-
-  // Timer logic
-  useEffect(() => {
-    if (currentScreen === 'discovery' && startTime) {
-      const animate = () => {
-        const elapsed = (performance.now() - startTime) / 1000;
-        updateTotalTime(elapsed);
-        timerRef.current = requestAnimationFrame(animate);
-      };
-      timerRef.current = requestAnimationFrame(animate);
-
-      return () => {
-        if (timerRef.current) cancelAnimationFrame(timerRef.current);
-      };
-    }
-  }, [currentScreen, startTime, updateTotalTime]);
-
-  // Mouse velocity tracking
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    const now = performance.now();
-    const dx = e.clientX - lastMousePos.current.x;
-    const dy = e.clientY - lastMousePos.current.y;
-    const dt = now - lastMousePos.current.time;
-
-    if (dt > 0) {
-      const speed = Math.sqrt(dx * dx + dy * dy) / dt * 1000;
-      trackVelocity(speed);
-    }
-
-    lastMousePos.current = { x: e.clientX, y: e.clientY, time: now };
-  }, [trackVelocity]);
-
-  useEffect(() => {
-    if (currentScreen === 'discovery') {
-      document.addEventListener('mousemove', handleMouseMove);
-      return () => document.removeEventListener('mousemove', handleMouseMove);
-    }
-  }, [currentScreen, handleMouseMove]);
-
-  // Screen transition
-  const goToScreen = (screen: typeof currentScreen) => {
-    if (isTransitioning) return;
-    setTransitioning(true);
-
-    setTimeout(() => {
-      setScreen(screen);
-      if (screen === 'discovery') startDiscovery();
-      setTimeout(() => setTransitioning(false), 500);
-    }, 400);
-  };
+  }, [showProfileMenu]);
 
   // Get top genres for personalized sections
   const topGenres = getGenreScores();
@@ -135,8 +57,8 @@ export default function HomePage() {
   // Extract TMDB IDs for API filtering
   const primaryGenreIds = primaryGenres.map(g => g.tmdbId).filter(Boolean);
 
-  // Determine if user completed profiling properly (8+ sec OR 3+ clicks)
-  const hasProfile = !(clickSequence.length === 0 || (totalTime <= 8 && clickSequence.length < 3));
+  // Determine if user completed profiling properly
+  const hasProfile = profileComplete;
 
   // Fetch hero recommendation when profile is complete
   useEffect(() => {
@@ -164,77 +86,133 @@ export default function HomePage() {
         {/* Admin Widget - Development Only */}
         {process.env.NODE_ENV === 'development' && <AdminWidget />}
 
-        {/* Top Navigation */}
-        <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-20">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-            <div className="headline-h3 text-text-primary">AI Media Discovery</div>
-            <div className="flex items-center gap-4 md:gap-6 text-sm md:text-base">
-              {/* Profile Time Badge */}
-              {hasProfile && showProfileMessage && (
-                <div className="flex items-center gap-2">
-                  <div className="relative flex items-center justify-center w-10 h-10 rounded-full bg-accent-cyan/20 border-2 border-accent-cyan/40">
-                    <span className="text-accent-cyan font-bold text-sm mono">
-                      {totalTime.toFixed(0)}s
+        {/* Minimal Floating Header - Only Search & Profile Circle */}
+        <div className="fixed top-0 right-0 z-20 p-4 flex items-center gap-3">
+          {/* Search Icon */}
+          <button
+            onClick={() => setShowSearch(!showSearch)}
+            className="p-2 bg-bg-primary/80 backdrop-blur-sm hover:bg-bg-elevated rounded-full transition-colors shadow-lg border border-border-subtle"
+            aria-label="Toggle search"
+          >
+            <svg
+              className="w-5 h-5 text-text-secondary hover:text-accent-cyan transition-colors"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+              />
+            </svg>
+          </button>
+
+          {/* Profile Icon - Opens Menu */}
+          <div className="relative" ref={profileMenuRef}>
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="p-2 bg-bg-primary/80 backdrop-blur-sm hover:bg-bg-elevated rounded-full transition-colors shadow-lg border border-border-subtle"
+              aria-label="Open profile menu"
+            >
+              <svg
+                className={`w-5 h-5 ${hasProfile ? 'text-accent-cyan' : 'text-yellow-500'}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu - Exact AdminWidget HTML */}
+            {showProfileMenu && (
+                <div className="absolute right-0 mt-2 w-[340px] bg-bg-primary/95 backdrop-blur-xl border border-border-subtle rounded-lg shadow-2xl overflow-hidden animate-slide-down">
+                  {/* Header */}
+                  <div className="flex justify-between items-center px-4 py-3 bg-bg-elevated">
+                    <span className="text-text-secondary text-[0.625rem] uppercase tracking-widest font-medium">
+                      Genre Leaderboard
                     </span>
+                    {userName && (
+                      <span className="text-accent-cyan text-xs mono font-medium">
+                        {userName}
+                      </span>
+                    )}
                   </div>
-                  <span className="hidden md:inline text-text-secondary text-xs">
-                    to profile you
-                  </span>
+
+                  {/* Body */}
+                  <div className="p-4 max-h-[450px] overflow-y-auto">
+                    {/* User Name */}
+                    {userName && (
+                      <div className="text-2xl text-accent-cyan text-center py-2 bg-bg-elevated rounded mb-4 mono font-medium">
+                        {userName}
+                      </div>
+                    )}
+
+                    {/* Genre Leaderboard */}
+                    <div className="mb-4">
+                      <div className="text-text-secondary text-[0.6rem] uppercase tracking-wide mb-2 font-medium">
+                        Your Top Preferences
+                      </div>
+                      <div className="space-y-1">
+                        {topGenres.slice(0, 5).map((genre, index) => (
+                          <div
+                            key={genre.id}
+                            className="flex items-center gap-2 py-1.5 border-b border-bg-elevated last:border-0"
+                          >
+                            <span className="w-5 text-text-secondary font-bold text-xs">
+                              {index + 1}
+                            </span>
+                            <span
+                              className="w-2 h-2 rounded-sm"
+                              style={{ backgroundColor: genre.color }}
+                            />
+                            <span className="flex-1 text-sm">{genre.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="border-t border-border-subtle pt-4">
+                      <a
+                        href="/.well-known/arw-manifest.json"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                      >
+                        ARW Manifest
+                      </a>
+                      <a
+                        href="/llms.txt"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                      >
+                        llms.txt
+                      </a>
+                      <Link
+                        href="/about"
+                        className="block px-2 py-1.5 text-sm text-text-secondary hover:text-accent-cyan transition-colors"
+                      >
+                        About
+                      </Link>
+                    </div>
+                  </div>
                 </div>
-              )}
-
-              {/* Search Icon */}
-              <button
-                onClick={() => setShowSearch(!showSearch)}
-                className="p-2 hover:bg-bg-elevated rounded-lg transition-colors"
-                aria-label="Toggle search"
-              >
-                <svg
-                  className="w-5 h-5 text-text-secondary hover:text-accent-cyan transition-colors"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                  />
-                </svg>
-              </button>
-
-              <a
-                href="/llms.txt"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
-                aria-label="LLM-readable site index"
-              >
-                llms.txt
-              </a>
-              <a
-                href="/.well-known/arw-manifest.json"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
-                aria-label="ARW machine-readable API manifest"
-              >
-                ARW Manifest
-              </a>
-              <Link
-                href="/about"
-                className="text-text-secondary hover:text-accent-cyan transition-colors hidden md:inline"
-              >
-                About ARW
-              </Link>
-            </div>
+            )}
           </div>
-        </nav>
+        </div>
 
         {/* Collapsible Search Section */}
         {showSearch && (
-          <div className="sticky top-[73px] z-10 bg-bg-primary/95 backdrop-blur-sm border-b border-border-subtle py-6 px-4 animate-slide-down">
+          <div className="sticky top-0 z-10 bg-bg-primary/95 backdrop-blur-sm border-b border-border-subtle py-6 px-4 animate-slide-down">
             <div className="max-w-3xl mx-auto">
               <Suspense fallback={<SearchBarSkeleton />}>
                 <SearchBar />
@@ -278,19 +256,6 @@ export default function HomePage() {
           />
         )}
 
-        {/* Profile Completion Message */}
-        {!hasProfile && (
-          <div className="py-8 px-4 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-genre-comedy/10 border border-genre-comedy/30 rounded-full">
-              <span className="text-genre-comedy text-sm">
-                {clickSequence.length === 0
-                  ? "You didn't select any genres — showing general recommendations"
-                  : "You skipped profiling — recommendations may be less personalized"
-                }
-              </span>
-            </div>
-          </div>
-        )}
 
         {hasProfile ? (
           <section className="py-12 px-4 md:px-8">
@@ -353,121 +318,15 @@ export default function HomePage() {
     );
   }
 
-  // Cold-start discovery flow
+  // Loading state while redirect happens
   return (
-    <main className="min-h-screen">
-      {/* Admin Widget - Development Only */}
-      {process.env.NODE_ENV === 'development' && <AdminWidget />}
-
-      {/* SCREEN 1: SIGN-IN */}
-      <section
-        className={`screen ${currentScreen === 'signin' ? 'active' : ''} ${isTransitioning && currentScreen === 'signin' ? 'exiting' : ''
-          } ${isTransitioning && currentScreen !== 'signin' ? 'entering' : ''}`}
-      >
-        <div className="bg-bg-primary border border-border-subtle p-12 w-full max-w-[420px] text-center animate-card-fade-in rounded-lg">
-          <h1 className="headline-hero mb-2">
-            Discover Your<br />Next Watch
-          </h1>
-          <p className="text-body mb-8">
-            No questionnaires. No endless scrolling.<br />
-            Just a few moments of your attention.
-          </p>
-          <input
-            type="email"
-            className="input-field mb-4 rounded"
-            placeholder="Enter your email"
-            disabled
-          />
-          <button
-            className="btn-primary w-full rounded"
-            onClick={() => goToScreen('discovery')}
-          >
-            Start Exploring
-          </button>
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="text-center">
+        <div className="inline-block animate-pulse">
+          <div className="h-8 w-64 bg-bg-elevated rounded mb-4" />
+          <div className="h-4 w-96 bg-bg-elevated rounded" />
         </div>
-      </section>
-
-      {/* SCREEN 2: DISCOVERY GRID */}
-      <section
-        className={`screen discovery-screen ${currentScreen === 'discovery' ? 'active' : ''} ${isTransitioning && currentScreen === 'discovery' ? 'entering' : ''
-          }`}
-      >
-        <div className="w-full max-w-[1000px] h-full flex flex-col px-4 mx-auto">
-
-          {/* Header - fixed at top */}
-          <div className="text-center py-4 flex-shrink-0">
-            <h1 className="headline-h1 mb-2">What catches your eye?</h1>
-            <p className="text-body">Select images that interest you</p>
-            <div className="mono text-xl text-accent-cyan mt-2">
-              {totalTime.toFixed(3)}s
-            </div>
-          </div>
-
-          {/* Thumbnail Grid - scrollable */}
-          <div className="flex-1 overflow-auto scrollbar-hide py-2">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-              {shuffledGenres.map((genre, index) => {
-                const genreData = genres[genre.id];
-                const isClicked = genreData?.clickOrder !== null;
-
-                return (
-                  <div
-                    key={genre.id}
-                    className="card-hover relative aspect-[9/16] overflow-hidden cursor-pointer rounded-lg"
-                    style={{
-                      borderWidth: '2px',
-                      borderStyle: 'solid',
-                      borderColor: isClicked ? genre.color : 'transparent',
-                      animationDelay: `${index * 50}ms`,
-                    }}
-                    onMouseEnter={() => onHoverEnter(genre.id)}
-                    onMouseLeave={() => onHoverLeave(genre.id)}
-                    onClick={() => onThumbnailClick(genre.id)}
-                  >
-                    <img
-                      src={genre.src}
-                      alt={genre.name}
-                      className="w-full h-full object-cover"
-                    />
-                    {isClicked && (
-                      <div
-                        className="absolute inset-0 flex items-center justify-center"
-                      >
-                        <div
-                          className="w-16 h-16 flex items-center justify-center rounded-full text-3xl font-bold animate-badge-pop shadow-lg"
-                          style={{ backgroundColor: genre.color, color: '#0D1117' }}
-                        >
-                          {genreData?.clickOrder}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* CTA - fixed at bottom */}
-          <div className="flex-shrink-0 py-4 pb-safe">
-            <div className="relative mx-auto max-w-[300px]">
-              {/* Animated border - only visible when profile ready */}
-              {showContinueButton && (
-                <div
-                  className="absolute -inset-[3px] rounded-lg bg-gradient-to-r from-accent-cyan via-genre-scifi to-accent-cyan bg-[length:200%_100%] animate-gradient-shift"
-                />
-              )}
-              <button
-                className={`btn-primary relative w-full rounded ${showContinueButton ? 'shadow-lg shadow-accent-cyan/30' : ''
-                  }`}
-                onClick={completeProfile}
-              >
-                {showContinueButton ? 'See My Recommendations' : 'Skip'}
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
-
+      </div>
     </main>
   );
 }

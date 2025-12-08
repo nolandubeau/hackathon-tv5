@@ -25,6 +25,7 @@ export interface DiscoveryMetrics {
   hoverStartTime: number | null;
   profileComplete: boolean;
   showProfileMessage: boolean;
+  userName: string | null;
 }
 
 // 8 genre configuration with Unsplash images and TMDB genre IDs
@@ -102,6 +103,7 @@ interface DiscoveryStore extends DiscoveryMetrics {
   getGenreScores: () => Genre[];
   resetMetrics: () => void;
   completeProfile: () => void;
+  setUserName: (name: string) => void;
 }
 
 const initialState: DiscoveryMetrics = {
@@ -118,6 +120,7 @@ const initialState: DiscoveryMetrics = {
   hoverStartTime: null,
   profileComplete: false,
   showProfileMessage: false,
+  userName: null,
 };
 
 export const useDiscoveryStore = create<DiscoveryStore>((set, get) => ({
@@ -232,4 +235,6 @@ export const useDiscoveryStore = create<DiscoveryStore>((set, get) => ({
   },
 
   completeProfile: () => set({ profileComplete: true, currentScreen: 'app', showProfileMessage: true }),
+
+  setUserName: (name) => set({ userName: name }),
 }));

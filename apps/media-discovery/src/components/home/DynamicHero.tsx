@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPosterUrl, getBackdropUrl } from '@/lib/tmdb';
@@ -14,6 +15,7 @@ interface DynamicHeroProps {
 }
 
 export function DynamicHero({ content, source, preferences }: DynamicHeroProps) {
+  const [showWatchlistLabel, setShowWatchlistLabel] = useState(false);
   const posterUrl = getPosterUrl(content.posterPath);
   const backdropUrl = getBackdropUrl(content.backdropPath);
 
@@ -35,21 +37,21 @@ export function DynamicHero({ content, source, preferences }: DynamicHeroProps) 
   const sourceBadge = {
     ai: {
       text: 'From your conversation',
-      bgColor: 'bg-accent-cyan/20',
-      borderColor: 'border-accent-cyan/40',
-      textColor: 'text-accent-cyan',
+      bgColor: 'bg-white/20',
+      borderColor: 'border-white/40',
+      textColor: 'text-white',
     },
     preference: {
       text: 'Based on your taste',
-      bgColor: 'bg-genre-scifi/20',
-      borderColor: 'border-genre-scifi/40',
-      textColor: 'text-genre-scifi',
+      bgColor: 'bg-white/20',
+      borderColor: 'border-white/40',
+      textColor: 'text-white',
     },
     trending: {
       text: 'Trending now',
-      bgColor: 'bg-genre-action/20',
-      borderColor: 'border-genre-action/40',
-      textColor: 'text-genre-action',
+      bgColor: 'bg-white/20',
+      borderColor: 'border-white/40',
+      textColor: 'text-white',
     },
   }[source.type];
 
@@ -194,15 +196,49 @@ export function DynamicHero({ content, source, preferences }: DynamicHeroProps) 
               <div className="flex flex-wrap justify-center md:justify-start gap-3">
                 <Link
                   href={`/${content.mediaType}/${content.id}`}
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-accent-cyan hover:bg-accent-cyan/90 text-gray-950 font-medium rounded transition-colors"
                 >
-                  View Details
+                  <svg
+                    className="w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  Play Trailer
                 </Link>
-                {source.type === 'ai' && (
-                  <button className="inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors">
-                    Continue Conversation
-                  </button>
-                )}
+                <button
+                  className="relative inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded transition-all overflow-hidden group"
+                  onMouseEnter={() => setShowWatchlistLabel(true)}
+                  onMouseLeave={() => setShowWatchlistLabel(false)}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 4v16m8-8H4"
+                    />
+                  </svg>
+                  <span
+                    className={`transition-all duration-300 ${
+                      showWatchlistLabel
+                        ? 'max-w-[200px] opacity-100'
+                        : 'max-w-0 opacity-0'
+                    } overflow-hidden whitespace-nowrap`}
+                  >
+                    Add to Watchlist
+                  </span>
+                </button>
               </div>
             </div>
           </div>
