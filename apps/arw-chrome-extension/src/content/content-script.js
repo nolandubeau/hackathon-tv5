@@ -32,7 +32,8 @@
         wellKnown: {},
         robotsTxt: null,
         sitemapXml: null,
-        metaTags: []
+        metaTags: [],
+        mcp: null  // MCP Protocol discovery
       },
       aiHeaders: [],
       permissions: {
@@ -41,8 +42,11 @@
         attribution: null,
         rateLimit: null
       },
+      policies: null,  // From arw-policies.json
+      protocols: [],   // All protocols (REST, MCP, etc.) from manifest
       actions: [],
       auth: null,
+      mcp: null,  // MCP servers configuration
       errors: []
     };
 
@@ -52,17 +56,23 @@
         llmsTxt,
         wellKnown,
         robotsTxt,
-        machineViewResult
+        machineViewResult,
+        mcpDiscovery
       ] = await Promise.all([
         checkLlmsTxt(),
         checkWellKnownFiles(),
         checkRobotsTxt(),
-        checkForMachineView()
+        checkForMachineView(),
+        checkMcpServers()
       ]);
 
       results.discoveries.llmsTxt = llmsTxt;
       results.discoveries.wellKnown = wellKnown;
       results.discoveries.robotsTxt = robotsTxt;
+      results.discoveries.mcp = mcpDiscovery;
+
+      // Extract MCP configuration from discovered sources
+      results.mcp = extractMcpConfig(llmsTxt, wellKnown, mcpDiscovery);
 
       // Handle machine view - now includes content
       if (machineViewResult && machineViewResult.exists) {
@@ -79,14 +89,68 @@
       // Scan for meta tags
       results.discoveries.metaTags = scanMetaTags();
 
+      // Extract protocols from manifest (REST, MCP, etc.)
+      if (wellKnown.manifest?.data?.protocols) {
+        results.protocols = parseProtocols(wellKnown.manifest.data.protocols, llmsTxt);
+      }
+
       // Extract actions from manifest
       if (wellKnown.manifest?.data?.actions) {
-        results.actions = wellKnown.manifest.data.actions;
+        results.actions = wellKnown.manifest.data.actions.map(action => ({
+          ...action,
+          protocol: 'rest' // Default to REST for manifest actions
+        }));
       }
 
       // Extract auth info from manifest
       if (wellKnown.manifest?.data?.auth) {
         results.auth = wellKnown.manifest.data.auth;
+      }
+
+      // Extract policies from arw-policies.json or manifest
+      if (wellKnown.policies?.exists && wellKnown.policies.data) {
+        results.policies = wellKnown.policies.data;
+        // Parse nested policy structure
+        const policies = wellKnown.policies.data;
+
+        // Training policy (can be boolean or object with .allowed)
+        if (policies.training !== undefined) {
+          if (typeof policies.training === 'boolean') {
+            results.permissions.training = policies.training ? 'allowed' : 'disallowed';
+          } else if (typeof policies.training === 'object') {
+            results.permissions.training = policies.training.allowed ? 'allowed' : 'disallowed';
+          }
+        }
+
+        // Inference policy
+        if (policies.inference !== undefined) {
+          if (typeof policies.inference === 'boolean') {
+            results.permissions.inference = policies.inference ? 'allowed' : 'disallowed';
+          } else if (typeof policies.inference === 'object') {
+            results.permissions.inference = policies.inference.allowed ? 'allowed' : 'disallowed';
+          }
+        }
+
+        // Attribution policy
+        if (policies.attribution !== undefined) {
+          if (typeof policies.attribution === 'boolean') {
+            results.permissions.attribution = policies.attribution ? 'required' : 'not required';
+          } else if (typeof policies.attribution === 'object') {
+            results.permissions.attribution = policies.attribution.required ? 'required' : 'not required';
+          } else if (typeof policies.attribution === 'string') {
+            results.permissions.attribution = policies.attribution;
+          }
+        }
+
+        // Rate limit policy
+        if (policies.rate_limit !== undefined || policies.rateLimit !== undefined) {
+          const rateLimit = policies.rate_limit || policies.rateLimit;
+          if (typeof rateLimit === 'string') {
+            results.permissions.rateLimit = rateLimit;
+          } else if (typeof rateLimit === 'object') {
+            results.permissions.rateLimit = rateLimit.limit || rateLimit.value || JSON.stringify(rateLimit);
+          }
+        }
       }
 
       // Check for AI headers in machine view
@@ -100,7 +164,8 @@
       results.arwCompliant = !!(
         results.discoveries.llmsTxt?.exists ||
         results.discoveries.wellKnown.manifest?.exists ||
-        results.discoveries.machineViews.length > 0
+        results.discoveries.machineViews.length > 0 ||
+        results.mcp?.servers?.length > 0
       );
 
     } catch (error) {
@@ -111,6 +176,361 @@
     }
 
     return results;
+  }
+
+  /**
+   * Check for MCP (Model Context Protocol) servers
+   * Checks .well-known/mcp.json and parses from llms.txt/manifest
+   */
+  async function checkMcpServers() {
+    const result = {
+      exists: false,
+      sources: [],
+      servers: []
+    };
+
+    try {
+      // Check for dedicated MCP discovery file
+      const mcpUrl = `${currentOrigin}/.well-known/mcp.json`;
+      const response = await fetch(mcpUrl, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'no-cache'
+      });
+
+      if (response.ok) {
+        const text = await response.text();
+        try {
+          const data = JSON.parse(text);
+          result.exists = true;
+          result.sources.push('well-known');
+          result.url = mcpUrl;
+
+          if (data.servers && Array.isArray(data.servers)) {
+            result.servers = data.servers.map(server => ({
+              name: server.name,
+              description: server.description,
+              endpoint: server.endpoint,
+              transport: server.transport || 'http',
+              auth: server.auth || 'none',
+              tools: server.tools || [],
+              resources: server.resources || [],
+              source: 'well-known'
+            }));
+          }
+        } catch (e) {
+          // Invalid JSON
+        }
+      }
+    } catch (error) {
+      // Failed to fetch MCP file
+    }
+
+    return result;
+  }
+
+  /**
+   * Extract MCP configuration from various discovery sources
+   */
+  function extractMcpConfig(llmsTxt, wellKnown, mcpDiscovery) {
+    const mcp = {
+      version: null,
+      servers: [],
+      totalTools: 0,
+      totalResources: 0
+    };
+
+    // Add servers from dedicated MCP discovery
+    if (mcpDiscovery?.servers?.length > 0) {
+      mcp.servers.push(...mcpDiscovery.servers);
+    }
+
+    // Parse MCP from llms.txt content (YAML format)
+    if (llmsTxt?.exists && llmsTxt?.preview) {
+      const mcpMatch = llmsTxt.preview.match(/mcp:\s*\n([\s\S]*?)(?=\n\w|$)/);
+      if (mcpMatch) {
+        // Simple YAML parsing for MCP section
+        const mcpServers = parseMcpFromYaml(llmsTxt.preview);
+        if (mcpServers.length > 0) {
+          mcpServers.forEach(s => s.source = 'llms.txt');
+          mcp.servers.push(...mcpServers);
+        }
+      }
+    }
+
+    // Parse MCP from arw-manifest.json
+    if (wellKnown?.manifest?.exists && wellKnown.manifest.data?.mcp) {
+      const manifestMcp = wellKnown.manifest.data.mcp;
+      if (manifestMcp.servers && Array.isArray(manifestMcp.servers)) {
+        manifestMcp.servers.forEach(server => {
+          mcp.servers.push({
+            name: server.name,
+            description: server.description,
+            endpoint: server.endpoint,
+            transport: server.transport || 'http',
+            auth: server.auth || 'none',
+            scopes: server.scopes || [],
+            tools: server.tools || [],
+            resources: server.resources || [],
+            source: 'arw-manifest'
+          });
+        });
+      }
+      if (manifestMcp.version) {
+        mcp.version = manifestMcp.version;
+      }
+    }
+
+    // Calculate totals
+    mcp.totalTools = mcp.servers.reduce((sum, s) => sum + (s.tools?.length || 0), 0);
+    mcp.totalResources = mcp.servers.reduce((sum, s) => sum + (s.resources?.length || 0), 0);
+
+    return mcp.servers.length > 0 ? mcp : null;
+  }
+
+  /**
+   * Parse protocols array from arw-manifest.json
+   * Returns structured protocol information for both REST and MCP
+   */
+  function parseProtocols(protocolsArray, llmsTxt) {
+    const protocols = [];
+
+    if (!Array.isArray(protocolsArray)) return protocols;
+
+    for (const proto of protocolsArray) {
+      const protocolType = (proto.type || '').toLowerCase();
+
+      const protocol = {
+        name: proto.name || 'Unknown Protocol',
+        type: protocolType,
+        endpoint: proto.endpoint || null,
+        version: proto.version || null,
+        description: proto.description || null
+      };
+
+      if (protocolType === 'rest') {
+        // REST API protocol
+        protocol.actions = []; // Actions are in manifest.actions, linked by protocol
+      } else if (protocolType === 'mcp') {
+        // MCP Protocol
+        protocol.transports = proto.transports || [];
+        protocol.tools = (proto.tools || []).map(tool => ({
+          name: tool.name || tool.id,
+          description: tool.description || '',
+          auth: tool.auth || 'none',
+          scopes: tool.scopes || []
+        }));
+        protocol.resources = proto.resources || [];
+        protocol.prompts = proto.prompts || [];
+      }
+
+      protocols.push(protocol);
+    }
+
+    // Also parse protocols from llms.txt if available
+    if (llmsTxt?.exists && llmsTxt?.preview) {
+      const llmsProtocols = parseProtocolsFromLlmsTxt(llmsTxt.preview);
+      // Merge llms.txt protocols (avoid duplicates by type)
+      for (const lp of llmsProtocols) {
+        const existing = protocols.find(p => p.type === lp.type);
+        if (!existing) {
+          lp.source = 'llms.txt';
+          protocols.push(lp);
+        } else {
+          // Merge tools/resources if MCP
+          if (lp.type === 'mcp' && lp.tools) {
+            existing.tools = [...(existing.tools || []), ...lp.tools];
+          }
+        }
+      }
+    }
+
+    return protocols;
+  }
+
+  /**
+   * Parse protocols from llms.txt content
+   */
+  function parseProtocolsFromLlmsTxt(content) {
+    const protocols = [];
+
+    // Look for protocols: section
+    const protocolsStart = content.indexOf('protocols:');
+    if (protocolsStart === -1) return protocols;
+
+    const afterProtocols = content.substring(protocolsStart);
+    const lines = afterProtocols.split('\n');
+
+    let currentProtocol = null;
+    let currentTool = null;
+    let inTools = false;
+    let inResources = false;
+    let inTransports = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Stop at next top-level section (non-indented)
+      if (i > 0 && /^[a-z]+:/i.test(line) && !line.startsWith(' ') && !line.startsWith('\t')) {
+        break;
+      }
+
+      // New protocol entry
+      if (trimmed.startsWith("- name:") || trimmed.startsWith("-  name:")) {
+        if (currentProtocol) {
+          protocols.push(currentProtocol);
+        }
+        currentProtocol = {
+          name: trimmed.replace(/^-\s*name:\s*/, '').replace(/['"]/g, '').trim(),
+          tools: [],
+          resources: [],
+          transports: []
+        };
+        inTools = false;
+        inResources = false;
+        inTransports = false;
+        continue;
+      }
+
+      if (currentProtocol) {
+        if (trimmed.startsWith('type:')) {
+          currentProtocol.type = trimmed.replace('type:', '').trim().toLowerCase();
+        } else if (trimmed.startsWith('endpoint:')) {
+          currentProtocol.endpoint = trimmed.replace('endpoint:', '').trim();
+        } else if (trimmed.startsWith('version:')) {
+          currentProtocol.version = trimmed.replace('version:', '').replace(/['"]/g, '').trim();
+        } else if (trimmed.startsWith('description:')) {
+          currentProtocol.description = trimmed.replace('description:', '').replace(/['"]/g, '').trim();
+        } else if (trimmed === 'tools:') {
+          inTools = true;
+          inResources = false;
+          inTransports = false;
+        } else if (trimmed === 'resources:') {
+          inResources = true;
+          inTools = false;
+          inTransports = false;
+        } else if (trimmed === 'transports:') {
+          inTransports = true;
+          inTools = false;
+          inResources = false;
+        } else if (inTools && trimmed.startsWith('- id:')) {
+          currentTool = { name: trimmed.replace('- id:', '').trim() };
+          currentProtocol.tools.push(currentTool);
+        } else if (inTools && trimmed.startsWith('- name:')) {
+          currentTool = { name: trimmed.replace('- name:', '').replace(/['"]/g, '').trim() };
+          currentProtocol.tools.push(currentTool);
+        } else if (currentTool && trimmed.startsWith('name:') && !trimmed.startsWith('- name:')) {
+          currentTool.name = trimmed.replace('name:', '').replace(/['"]/g, '').trim();
+        } else if (currentTool && trimmed.startsWith('description:')) {
+          currentTool.description = trimmed.replace('description:', '').replace(/['"]/g, '').trim();
+        } else if (currentTool && trimmed.startsWith('auth:')) {
+          currentTool.auth = trimmed.replace('auth:', '').trim();
+        } else if (inResources && trimmed.startsWith('- uri:')) {
+          currentProtocol.resources.push({
+            uri: trimmed.replace('- uri:', '').replace(/['"]/g, '').trim()
+          });
+        } else if (inTransports && trimmed.startsWith('- type:')) {
+          currentProtocol.transports.push({
+            type: trimmed.replace('- type:', '').trim()
+          });
+        }
+      }
+    }
+
+    // Add last protocol
+    if (currentProtocol) {
+      protocols.push(currentProtocol);
+    }
+
+    return protocols;
+  }
+
+  /**
+   * Simple YAML parser for MCP section in llms.txt
+   */
+  function parseMcpFromYaml(content) {
+    const servers = [];
+
+    // Look for mcp: section
+    const mcpStart = content.indexOf('mcp:');
+    if (mcpStart === -1) return servers;
+
+    // Extract the mcp block
+    const afterMcp = content.substring(mcpStart);
+    const lines = afterMcp.split('\n');
+
+    let currentServer = null;
+    let currentTool = null;
+    let inServers = false;
+    let inTools = false;
+    let inResources = false;
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Stop at next top-level section
+      if (i > 0 && /^[a-z]+:/i.test(line) && !line.startsWith(' ')) {
+        break;
+      }
+
+      // servers: array start
+      if (trimmed === 'servers:') {
+        inServers = true;
+        continue;
+      }
+
+      // New server entry
+      if (inServers && trimmed.startsWith('- name:')) {
+        if (currentServer) {
+          servers.push(currentServer);
+        }
+        currentServer = {
+          name: trimmed.replace('- name:', '').trim(),
+          tools: [],
+          resources: []
+        };
+        inTools = false;
+        inResources = false;
+        continue;
+      }
+
+      if (currentServer) {
+        // Server properties
+        if (trimmed.startsWith('description:')) {
+          currentServer.description = trimmed.replace('description:', '').trim();
+        } else if (trimmed.startsWith('endpoint:')) {
+          currentServer.endpoint = trimmed.replace('endpoint:', '').trim();
+        } else if (trimmed.startsWith('transport:')) {
+          currentServer.transport = trimmed.replace('transport:', '').trim();
+        } else if (trimmed.startsWith('auth:')) {
+          currentServer.auth = trimmed.replace('auth:', '').trim();
+        } else if (trimmed === 'tools:') {
+          inTools = true;
+          inResources = false;
+        } else if (trimmed === 'resources:') {
+          inResources = true;
+          inTools = false;
+        } else if (inTools && trimmed.startsWith('- name:')) {
+          currentTool = { name: trimmed.replace('- name:', '').trim() };
+          currentServer.tools.push(currentTool);
+        } else if (currentTool && trimmed.startsWith('description:')) {
+          currentTool.description = trimmed.replace('description:', '').trim();
+        } else if (inResources && trimmed.startsWith('- uri:')) {
+          currentServer.resources.push({
+            uri: trimmed.replace('- uri:', '').trim()
+          });
+        }
+      }
+    }
+
+    // Add last server
+    if (currentServer) {
+      servers.push(currentServer);
+    }
+
+    return servers;
   }
 
   /**

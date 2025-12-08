@@ -19,7 +19,7 @@
     "chunking": true,
     "actions": true,
     "oauth": false,
-    "protocols": ["rest"]
+    "protocols": ["rest", "mcp"]
   },
   "actions": [
     {
@@ -84,11 +84,88 @@
       "name": "Media Discovery REST API",
       "type": "rest",
       "endpoint": "/api"
+    },
+    {
+      "name": "Media Gateway MCP Server",
+      "type": "mcp",
+      "version": "2024-11-05",
+      "transports": [
+        {
+          "type": "stdio",
+          "command": "npx agentics-hackathon mcp"
+        },
+        {
+          "type": "sse",
+          "endpoint": "https://mcp.media-discovery.agentics.org/sse"
+        }
+      ],
+      "tools": [
+        {
+          "name": "semantic_search",
+          "description": "Search for movies and TV shows using natural language queries",
+          "auth": "none"
+        },
+        {
+          "name": "get_recommendations",
+          "description": "Get personalized content recommendations based on preferences or similar content",
+          "auth": "none"
+        },
+        {
+          "name": "get_content_details",
+          "description": "Get detailed information about a specific movie or TV show",
+          "auth": "none"
+        },
+        {
+          "name": "check_availability",
+          "description": "Check where specific content is available to watch",
+          "auth": "none"
+        },
+        {
+          "name": "get_genres",
+          "description": "Get list of available content genres",
+          "auth": "none"
+        },
+        {
+          "name": "list_devices",
+          "description": "List user's registered devices with capabilities and online status",
+          "auth": "required",
+          "scopes": ["devices:read"]
+        },
+        {
+          "name": "initiate_playback",
+          "description": "Start content playback on a target device with deep link generation",
+          "auth": "required",
+          "scopes": ["playback:control"]
+        }
+      ],
+      "resources": [
+        {
+          "uri": "media://genres",
+          "name": "Content Genres",
+          "mimeType": "application/json"
+        },
+        {
+          "uri": "media://platforms",
+          "name": "Streaming Platforms",
+          "mimeType": "application/json"
+        }
+      ],
+      "prompts": [
+        {
+          "name": "discover_content",
+          "description": "Help users discover movies and TV shows"
+        },
+        {
+          "name": "plan_watch_session",
+          "description": "Plan a watch session based on mood and preferences"
+        }
+      ]
     }
   ],
   "metadata": {
-    "last_updated": "2025-12-07T03:30:00.000000+00:00",
+    "last_updated": "2025-12-07T12:00:00.000000+00:00",
     "generator": "arw-cli",
-    "spec_version": "1.0"
+    "spec_version": "1.0",
+    "mcp_protocol_version": "2024-11-05"
   }
 }

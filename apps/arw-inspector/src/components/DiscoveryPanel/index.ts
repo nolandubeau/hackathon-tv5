@@ -1,1 +1,0 @@
-export { DiscoveryPanel } from './DiscoveryPanel';

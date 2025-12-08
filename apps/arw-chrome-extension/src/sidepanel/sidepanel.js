@@ -1,6 +1,7 @@
 /**
  * ARW Inspector Side Panel
- * Displays machine view, token costs, and protocols
+ * Displays machine view, token costs, model comparisons, and protocols
+ * Enhanced with Cool Midnight theme styling and arw-inspector capabilities
  */
 
 (function() {
@@ -10,20 +11,154 @@
   const TOKEN_COST_PER_1K = 0.03; // $0.03 per 1K input tokens
   const CHARS_PER_TOKEN = 4; // Approximate characters per token
 
+  // Models API endpoint
+  const MODELS_API_URL = 'https://models.dev/api.json';
+
+  // Dynamic model costs (loaded from API)
+  let modelCosts = [];
+  let modelsLoading = false;
+  let modelsLoaded = false;
+
   // State
   let currentData = null;
-  let activeTabId = 'machine-view'; // Track which tab is active
+  let activeTabId = 'discovery';
   let retryCount = 0;
-  const MAX_RETRIES = 10; // Stop retrying after 10 seconds
-  let lastDataReceivedTime = 0; // Track when we last received data
-  let currentTabId = null; // Track current tab ID
+  const MAX_RETRIES = 10;
+  let lastDataReceivedTime = 0;
+  let currentTabId = null;
+
+  // Model filter state
+  let activeProviderFilter = 'all';
+  let activeCategoryFilter = 'all';
 
   // Initialize when DOM loads
   document.addEventListener('DOMContentLoaded', async () => {
     setupTabs();
     setupEventListeners();
-    await loadInspectionData();
+    setupModelFilters();
+    loadModelCosts(); // Load models in background
+
+    // Proactively inject content script immediately on sidepanel open
+    await triggerContentScript();
+
+    // Small delay to let content script run, then load data
+    setTimeout(async () => {
+      await loadInspectionData();
+    }, 100);
   });
+
+  /**
+   * Load model costs from models.dev API
+   */
+  async function loadModelCosts() {
+    if (modelsLoading || modelsLoaded) return;
+    modelsLoading = true;
+
+    try {
+      const response = await fetch(MODELS_API_URL);
+      if (!response.ok) throw new Error('Failed to fetch models');
+
+      const data = await response.json();
+      modelCosts = parseModelsData(data);
+      modelsLoaded = true;
+
+      // Update the UI if we have data
+      if (currentData) {
+        updateModelCostsTab();
+        updateProviderFilters();
+      }
+    } catch (error) {
+      console.error('[ARW] Failed to load model costs:', error);
+      // Fall back to empty array - table will show "No models available"
+      modelCosts = [];
+    } finally {
+      modelsLoading = false;
+    }
+  }
+
+  /**
+   * Parse models.dev API data into flat array
+   */
+  function parseModelsData(data) {
+    const models = [];
+    const providers = Object.values(data);
+
+    for (const provider of providers) {
+      if (!provider.models) continue;
+
+      const providerName = provider.name || provider.id || 'Unknown';
+
+      for (const [modelId, model] of Object.entries(provider.models)) {
+        // Skip models without pricing
+        if (!model.cost?.input && !model.cost?.output) continue;
+
+        const inputCost = model.cost?.input || 0;
+        const outputCost = model.cost?.output || 0;
+        const context = model.limit?.context || 0;
+
+        // Determine category based on price and capabilities
+        let category = 'standard';
+        if (inputCost >= 10 || model.reasoning) {
+          category = 'premium';
+        } else if (inputCost <= 0.5) {
+          category = 'fast';
+        } else if (inputCost <= 5) {
+          category = 'flagship';
+        }
+
+        models.push({
+          provider: providerName,
+          model: model.name || modelId,
+          id: modelId,
+          inputCost: inputCost,
+          outputCost: outputCost,
+          context: context,
+          category: category,
+          reasoning: model.reasoning || false,
+          toolCall: model.tool_call || false
+        });
+      }
+    }
+
+    // Sort by provider, then by input cost
+    models.sort((a, b) => {
+      if (a.provider !== b.provider) {
+        return a.provider.localeCompare(b.provider);
+      }
+      return a.inputCost - b.inputCost;
+    });
+
+    return models;
+  }
+
+  /**
+   * Update provider filter buttons based on loaded models
+   */
+  function updateProviderFilters() {
+    const providerFilters = document.getElementById('provider-filters');
+    if (!providerFilters || modelCosts.length === 0) return;
+
+    // Get unique providers
+    const providers = [...new Set(modelCosts.map(m => m.provider))].sort();
+
+    // Rebuild filter buttons
+    providerFilters.innerHTML = `
+      <button class="filter-btn active" data-filter="all">All</button>
+      ${providers.slice(0, 8).map(p => `
+        <button class="filter-btn" data-filter="${p.toLowerCase()}">${p}</button>
+      `).join('')}
+    `;
+
+    // Re-attach event listeners
+    providerFilters.querySelectorAll('.filter-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        providerFilters.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeProviderFilter = btn.dataset.filter;
+        updateModelCostsTab();
+      });
+    });
+  }
 
   /**
    * Setup tab navigation
@@ -35,15 +170,11 @@
     tabBtns.forEach(btn => {
       btn.addEventListener('click', () => {
         const tabId = btn.dataset.tab;
-
-        // Track active tab
         activeTabId = tabId;
 
-        // Update buttons
         tabBtns.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
 
-        // Update content
         tabContents.forEach(content => {
           content.classList.remove('active');
           content.style.display = 'none';
@@ -69,6 +200,37 @@
   }
 
   /**
+   * Setup model cost filters
+   */
+  function setupModelFilters() {
+    // Provider filters
+    const providerFilters = document.getElementById('provider-filters');
+    if (providerFilters) {
+      providerFilters.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          providerFilters.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeProviderFilter = btn.dataset.filter;
+          updateModelCostsTab();
+        });
+      });
+    }
+
+    // Category filters
+    const categoryFilters = document.getElementById('category-filters');
+    if (categoryFilters) {
+      categoryFilters.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          categoryFilters.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          activeCategoryFilter = btn.dataset.category;
+          updateModelCostsTab();
+        });
+      });
+    }
+  }
+
+  /**
    * Setup event listeners
    */
   function setupEventListeners() {
@@ -81,13 +243,7 @@
     // Open machine view
     document.getElementById('open-machine-view')?.addEventListener('click', openMachineView);
 
-    // Monthly requests input
-    document.getElementById('monthly-requests')?.addEventListener('input', updateProjections);
-
-    // GEO Analysis button
-    document.getElementById('open-full-analysis')?.addEventListener('click', openFullAnalysis);
-
-    // Listen for messages from background script (inspection updates)
+    // Listen for messages from background script
     chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       if (message.type === 'INSPECTION_UPDATE' && message.data) {
         console.log('[ARW Sidepanel] Received INSPECTION_UPDATE:', {
@@ -97,34 +253,22 @@
         });
         currentData = message.data;
         currentTabId = message.data.tabId;
-        retryCount = 0; // Reset retry counter since we got data
-        lastDataReceivedTime = Date.now(); // Track when we received data
+        retryCount = 0;
+        lastDataReceivedTime = Date.now();
         displayResults(currentData);
       }
       sendResponse({ received: true });
     });
 
-    // Listen for tab updates - reload when active tab finishes loading
+    // Listen for tab updates
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
       if (changeInfo.status === 'complete' && tab.active) {
-        // Small delay to let content script finish
         setTimeout(async () => {
           const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-          // Only reload if:
-          // 1. We don't have data for this tab, OR
-          // 2. The last data received was more than 2 seconds ago (indicates a real navigation)
           const timeSinceLastData = Date.now() - lastDataReceivedTime;
           const needsReload = !currentData ||
                              currentData.tabId !== activeTab.id ||
                              timeSinceLastData > 2000;
-
-          console.log('[ARW Sidepanel] Tab updated:', {
-            tabId: activeTab?.id,
-            currentDataTabId: currentData?.tabId,
-            timeSinceLastData,
-            needsReload
-          });
 
           if (activeTab && needsReload) {
             currentTabId = activeTab.id;
@@ -134,11 +278,9 @@
       }
     });
 
-    // Listen for tab activation - switch data when changing tabs
+    // Listen for tab activation
     chrome.tabs.onActivated.addListener(async () => {
       const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
-
-      // Only reload if we don't have data for this tab
       if (activeTab && (!currentData || currentData.tabId !== activeTab.id)) {
         currentTabId = activeTab.id;
         loadInspectionData();
@@ -150,15 +292,12 @@
    * Load inspection data from background script
    */
   async function loadInspectionData() {
-    // If we recently received data (within last 500ms), don't reload
     const timeSinceLastData = Date.now() - lastDataReceivedTime;
     if (currentData && timeSinceLastData < 500) {
-      console.log('Skipping reload - data received recently');
       return;
     }
 
     showLoading();
-    retryCount = 0; // Reset retry counter
 
     try {
       const response = await chrome.runtime.sendMessage({
@@ -171,14 +310,20 @@
         retryCount = 0;
         lastDataReceivedTime = Date.now();
         displayResults(currentData);
-      } else if (response.status === 'no_data' && response.message?.includes('progress')) {
-        // Inspection in progress, wait and retry with exponential backoff
+      } else if (response.status === 'no_data') {
+        // No data yet - try to trigger content script and retry
         if (retryCount < MAX_RETRIES) {
           retryCount++;
-          const delay = Math.min(1000 * retryCount, 3000); // Max 3 second delay
+
+          // On first retry, try to inject content script
+          if (retryCount === 1) {
+            await triggerContentScript();
+          }
+
+          const delay = Math.min(500 * retryCount, 2000);
           setTimeout(() => loadInspectionData(), delay);
         } else {
-          showError('Inspection is taking longer than expected. Try refreshing the page.');
+          showError('No ARW data found. Try refreshing the page.');
         }
       } else {
         showError(response.message || 'No inspection data available');
@@ -189,23 +334,39 @@
   }
 
   /**
+   * Trigger content script to run on active tab
+   */
+  async function triggerContentScript() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.id && tab.url && !tab.url.startsWith('chrome://')) {
+        await chrome.scripting.executeScript({
+          target: { tabId: tab.id },
+          files: ['content/content-script.js']
+        });
+      }
+    } catch (error) {
+      // Content script may already be running or page doesn't allow injection
+      console.log('Could not inject content script:', error.message);
+    }
+  }
+
+  /**
    * Display inspection results
    */
   function displayResults(data) {
     hideLoading();
 
-    // Update header
     updateHeader(data);
-
-    // Update all tabs
-    updateMachineViewTab(data);
-    updateTokenCostTab(data);
-    updateProtocolsTab(data);
     updateDiscoveryTab(data);
+    updateProtocolsSection(data);
+    updateMachineViewTab(data);
+    updateContentAnalysis(data);
+    updateCostsTab(data);
+    updateModelCostsTab();
     updateGEOTab(data);
 
-    // Restore the previously active tab (or default to machine-view)
-    switchToTab(activeTabId || 'machine-view');
+    switchToTab(activeTabId || 'discovery');
   }
 
   /**
@@ -213,21 +374,32 @@
    */
   function updateHeader(data) {
     document.getElementById('page-url').textContent = data.url;
-    document.getElementById('inspection-time').textContent =
-      new Date(data.timestamp).toLocaleTimeString();
+
+    // Calculate ARW compliance level
+    const arwLevel = calculateARWLevel(data);
 
     // Update ARW compliance badge
     const badge = document.getElementById('compliance-badge');
     const badgeText = document.getElementById('badge-text');
 
-    badge.classList.remove('badge-unknown', 'badge-compliant', 'badge-non-compliant');
+    badge.classList.remove('badge-unknown', 'badge-compliant', 'badge-non-compliant',
+                           'badge-partial', 'badge-minimal', 'badge-full');
 
-    if (data.arwCompliant) {
+    if (arwLevel.score >= 80) {
+      badge.classList.add('badge-full');
+      badgeText.textContent = 'ARW';
+    } else if (arwLevel.score >= 50) {
       badge.classList.add('badge-compliant');
-      badgeText.textContent = 'ARW Compliant';
+      badgeText.textContent = 'ARW';
+    } else if (arwLevel.score >= 20) {
+      badge.classList.add('badge-partial');
+      badgeText.textContent = 'ARW';
+    } else if (arwLevel.score > 0) {
+      badge.classList.add('badge-minimal');
+      badgeText.textContent = 'ARW';
     } else {
       badge.classList.add('badge-non-compliant');
-      badgeText.textContent = 'Not Compliant';
+      badgeText.textContent = 'No ARW';
     }
 
     // Update GEO score badge
@@ -256,6 +428,52 @@
   }
 
   /**
+   * Calculate ARW compliance level based on discovered components
+   */
+  function calculateARWLevel(data) {
+    let score = 0;
+    const components = [];
+
+    // Machine view (35 points - most important)
+    if (data.machineViewContent && data.machineViewContent.length > 0) {
+      score += 35;
+      components.push('machine-view');
+    }
+
+    // llms.txt (20 points)
+    if (data.discoveries?.llmsTxt?.exists) {
+      score += 20;
+      components.push('llms.txt');
+    }
+
+    // .well-known/arw-manifest.json (15 points)
+    if (data.discoveries?.wellKnown?.manifest?.exists) {
+      score += 15;
+      components.push('manifest');
+    }
+
+    // MCP servers (15 points - AI agent integration)
+    if (data.mcp?.servers?.length > 0) {
+      score += 15;
+      components.push('mcp');
+    }
+
+    // ARW meta tags (10 points)
+    if (data.discoveries?.metaTags?.length > 0) {
+      score += 10;
+      components.push('meta-tags');
+    }
+
+    // robots.txt with ARW hints (5 points)
+    if (data.discoveries?.robotsTxt?.exists && data.discoveries?.robotsTxt?.hasArwHints) {
+      score += 5;
+      components.push('robots.txt');
+    }
+
+    return { score: Math.min(score, 100), components };
+  }
+
+  /**
    * Update Machine View tab
    */
   function updateMachineViewTab(data) {
@@ -263,27 +481,75 @@
     const statusText = document.getElementById('mv-status-text');
     const content = document.getElementById('machine-view-content');
 
-    // Validate machine view content is actually markdown, not HTML
     const machineViewContent = data.machineViewContent;
     const isValidContent = machineViewContent &&
                            !isHTMLContent(machineViewContent) &&
                            machineViewContent.length > 0;
 
     if (isValidContent) {
-      statusIcon.textContent = '✓';
+      statusIcon.textContent = '+';
+      statusIcon.style.color = 'var(--success)';
       const mv = data.discoveries?.machineViews?.[0];
       statusText.textContent = mv?.url ? `Found: ${mv.url}` : 'Machine view available';
       content.textContent = machineViewContent;
       content.classList.remove('placeholder');
     } else if (data.discoveries?.machineViews?.length > 0) {
       const mv = data.discoveries.machineViews[0];
-      statusIcon.textContent = '⚠️';
+      statusIcon.textContent = '!';
+      statusIcon.style.color = 'var(--warning)';
       statusText.textContent = `URL: ${mv.url} (content may be invalid)`;
       content.innerHTML = `<p class="placeholder">Machine view found but content appears to be HTML, not markdown.</p>`;
     } else {
-      statusIcon.textContent = '✗';
+      statusIcon.textContent = '-';
+      statusIcon.style.color = 'var(--error)';
       statusText.textContent = 'No machine view found';
-      content.innerHTML = `<p class="placeholder">No machine view (.llm.md) available for this page.\n\nThe extension looks for:\n• &lt;link rel="machine-view" href="..."&gt;\n• /path/to/page.llm.md\n• /path/to/page.md</p>`;
+      content.innerHTML = `<p class="placeholder">No machine view (.llm.md) available for this page.</p>`;
+    }
+  }
+
+  /**
+   * Update Content Analysis section (NEW)
+   */
+  function updateContentAnalysis(data) {
+    const content = data.machineViewContent || '';
+
+    // Word count
+    const words = content.trim().split(/\s+/).filter(w => w.length > 0);
+    document.getElementById('word-count').textContent = formatNumber(words.length);
+
+    // Character count
+    document.getElementById('char-count').textContent = formatNumber(content.length);
+
+    // Chunk count (look for <!-- chunk: --> markers)
+    const chunkMatches = content.match(/<!--\s*chunk:\s*[\w-]+\s*-->/gi);
+    const chunkCount = chunkMatches ? chunkMatches.length : 0;
+    document.getElementById('chunk-count').textContent = chunkCount;
+
+    // Heading count
+    const headingMatches = content.match(/^#{1,6}\s+.+$/gm);
+    const headingCount = headingMatches ? headingMatches.length : 0;
+    document.getElementById('heading-count').textContent = headingCount;
+
+    // Extract entities from GEO analysis
+    const entityContainer = document.getElementById('entity-container');
+    const entityTags = document.getElementById('entity-tags');
+
+    if (data.geo?.metrics?.entities?.totalEntities > 0) {
+      entityContainer.style.display = 'block';
+      const entities = [];
+
+      // Extract entities from GEO data
+      if (data.geo.metrics.entities.properNouns) {
+        data.geo.metrics.entities.properNouns.slice(0, 8).forEach(e => {
+          entities.push({ name: e, type: 'entity' });
+        });
+      }
+
+      entityTags.innerHTML = entities.map(e =>
+        `<span class="entity-tag ${e.type}">${e.name}</span>`
+      ).join('');
+    } else {
+      entityContainer.style.display = 'none';
     }
   }
 
@@ -302,31 +568,24 @@
   }
 
   /**
-   * Update Token Cost tab
+   * Update Costs tab (combined token + model costs)
    */
-  function updateTokenCostTab(data) {
+  function updateCostsTab(data) {
     const htmlSize = data.pageSize || 0;
     const mvSize = data.machineViewContent?.length || data.machineViewSize || 0;
 
-    // Calculate tokens
     const htmlTokens = Math.ceil(htmlSize / CHARS_PER_TOKEN);
     const mvTokens = Math.ceil(mvSize / CHARS_PER_TOKEN);
 
-    // Calculate costs
     const htmlCost = (htmlTokens / 1000) * TOKEN_COST_PER_1K;
     const mvCost = (mvTokens / 1000) * TOKEN_COST_PER_1K;
 
-    // Update HTML metrics
     document.getElementById('html-size').textContent = formatBytes(htmlSize);
     document.getElementById('html-tokens').textContent = formatNumber(htmlTokens);
-    document.getElementById('html-cost').textContent = formatCurrency(htmlCost);
 
-    // Update Machine View metrics
     document.getElementById('mv-size').textContent = mvSize > 0 ? formatBytes(mvSize) : 'N/A';
     document.getElementById('mv-tokens').textContent = mvSize > 0 ? formatNumber(mvTokens) : 'N/A';
-    document.getElementById('mv-cost').textContent = mvSize > 0 ? formatCurrency(mvCost) : 'N/A';
 
-    // Calculate savings
     if (mvSize > 0 && htmlSize > 0) {
       const sizeReduction = Math.round((1 - mvSize / htmlSize) * 100);
       const tokenReduction = Math.round((1 - mvTokens / htmlTokens) * 100);
@@ -340,45 +599,186 @@
     } else {
       document.getElementById('savings-summary').style.display = 'none';
     }
-
-    // Update projections
-    updateProjections();
   }
 
   /**
-   * Update monthly projections
+   * Update Model Costs tab (loads from models.dev API)
    */
-  function updateProjections() {
-    const requests = parseInt(document.getElementById('monthly-requests')?.value) || 10000;
+  function updateModelCostsTab() {
+    const tbody = document.getElementById('model-cost-tbody');
+    if (!tbody) return;
 
-    if (!currentData) return;
-
-    const htmlSize = currentData.pageSize || 0;
-    const mvSize = currentData.machineViewContent?.length || currentData.machineViewSize || 0;
-
-    if (mvSize > 0 && htmlSize > 0) {
-      const htmlTokens = Math.ceil(htmlSize / CHARS_PER_TOKEN);
-      const mvTokens = Math.ceil(mvSize / CHARS_PER_TOKEN);
-
-      const bandwidthSaved = (htmlSize - mvSize) * requests;
-      const tokensSaved = (htmlTokens - mvTokens) * requests;
-      const costSaved = (tokensSaved / 1000) * TOKEN_COST_PER_1K;
-
-      document.getElementById('bandwidth-saved').textContent = formatBytes(bandwidthSaved);
-      document.getElementById('tokens-saved').textContent = formatNumber(tokensSaved);
-      document.getElementById('cost-saved').textContent = formatCurrency(costSaved);
-    } else {
-      document.getElementById('bandwidth-saved').textContent = 'N/A';
-      document.getElementById('tokens-saved').textContent = 'N/A';
-      document.getElementById('cost-saved').textContent = 'N/A';
+    // Show loading state if models not yet loaded
+    if (modelsLoading) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">Loading models...</td></tr>';
+      return;
     }
+
+    if (modelCosts.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">No models available</td></tr>';
+      return;
+    }
+
+    const htmlSize = currentData?.pageSize || 0;
+    const mvSize = currentData?.machineViewContent?.length || currentData?.machineViewSize || 0;
+
+    const htmlTokens = Math.ceil(htmlSize / CHARS_PER_TOKEN);
+    const mvTokens = Math.ceil(mvSize / CHARS_PER_TOKEN);
+
+    // Filter models
+    let filteredModels = modelCosts.filter(model => {
+      const providerMatch = activeProviderFilter === 'all' ||
+                            model.provider.toLowerCase().includes(activeProviderFilter);
+      const categoryMatch = activeCategoryFilter === 'all' ||
+                            model.category === activeCategoryFilter;
+      return providerMatch && categoryMatch;
+    });
+
+    // Sort by savings (highest first)
+    filteredModels.sort((a, b) => {
+      const aSavings = calculateCost(htmlTokens, a.inputCost) - calculateCost(mvTokens, a.inputCost);
+      const bSavings = calculateCost(htmlTokens, b.inputCost) - calculateCost(mvTokens, b.inputCost);
+      return bSavings - aSavings;
+    });
+
+    // Limit to top 50 for performance
+    const displayModels = filteredModels.slice(0, 50);
+
+    // Build table rows
+    tbody.innerHTML = displayModels.map(model => {
+      const htmlCost = calculateCost(htmlTokens, model.inputCost);
+      const mvCost = calculateCost(mvTokens, model.inputCost);
+      const savings = htmlCost - mvCost;
+      const savingsPercent = htmlCost > 0 ? Math.round((savings / htmlCost) * 100) : 0;
+
+      const providerClass = model.provider.toLowerCase().replace(/\s+/g, '').replace(/[^a-z]/g, '');
+
+      return `
+        <tr>
+          <td>
+            <div class="provider">
+              <span class="provider-dot ${providerClass}"></span>
+              ${model.provider}
+            </div>
+          </td>
+          <td>${model.model}</td>
+          <td><span class="category-badge ${model.category}">${model.category}</span></td>
+          <td class="cost">${formatCurrency(htmlCost)}</td>
+          <td class="cost">${mvSize > 0 ? formatCurrency(mvCost) : 'N/A'}</td>
+          <td class="savings">${mvSize > 0 ? `${savingsPercent}%` : '--'}</td>
+        </tr>
+      `;
+    }).join('');
+
+    // Show count if filtered
+    if (filteredModels.length > 50) {
+      tbody.innerHTML += `<tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 8px; font-size: 11px;">Showing 50 of ${filteredModels.length} models</td></tr>`;
+    }
+
+    // Update best value recommendations
+    updateBestValueModels(filteredModels, htmlTokens, mvTokens);
   }
 
   /**
-   * Update Protocols tab
+   * Update best value models section
    */
-  function updateProtocolsTab(data) {
-    // Update AI Headers
+  function updateBestValueModels(models, htmlTokens, mvTokens) {
+    const container = document.getElementById('best-value-models');
+    if (!container) return;
+
+    if (!currentData?.machineViewContent) {
+      container.innerHTML = 'Machine view required to see savings';
+      return;
+    }
+
+    if (models.length === 0) {
+      container.innerHTML = 'No models available';
+      return;
+    }
+
+    // Find best value in each category
+    const categories = ['fast', 'flagship', 'standard', 'premium'];
+    const recommendations = [];
+
+    categories.forEach(cat => {
+      const catModels = models.filter(m => m.category === cat);
+      if (catModels.length > 0) {
+        const best = catModels.reduce((a, b) => {
+          const aSavings = calculateCost(htmlTokens, a.inputCost) - calculateCost(mvTokens, a.inputCost);
+          const bSavings = calculateCost(htmlTokens, b.inputCost) - calculateCost(mvTokens, b.inputCost);
+          return aSavings > bSavings ? a : b;
+        });
+        const savings = calculateCost(htmlTokens, best.inputCost) - calculateCost(mvTokens, best.inputCost);
+        if (savings > 0) {
+          recommendations.push({
+            category: cat,
+            model: best.model,
+            provider: best.provider,
+            savings: savings
+          });
+        }
+      }
+    });
+
+    if (recommendations.length === 0) {
+      container.innerHTML = 'No savings available with current content';
+      return;
+    }
+
+    container.innerHTML = recommendations.map(r => `
+      <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+        <span><strong>${r.category}:</strong> ${r.provider} ${r.model}</span>
+        <span style="color: var(--success); font-weight: 600;">${formatCurrency(r.savings)}/req</span>
+      </div>
+    `).join('');
+  }
+
+  /**
+   * Calculate cost for tokens
+   */
+  function calculateCost(tokens, costPerMToken) {
+    return (tokens / 1000000) * costPerMToken;
+  }
+
+  /**
+   * Update Protocols section - grouped by protocol type
+   */
+  function updateProtocolsSection(data) {
+    const protocolsContainer = document.getElementById('protocols-container');
+
+    // Get protocols from data or build from legacy data
+    let protocols = data.protocols || [];
+
+    // If no protocols array, try to build from legacy data
+    if (protocols.length === 0) {
+      // Check for REST actions
+      if (data.actions && data.actions.length > 0) {
+        protocols.push({
+          name: 'REST API',
+          type: 'rest',
+          endpoint: '/api',
+          actions: data.actions
+        });
+      }
+      // Check for MCP servers
+      if (data.mcp?.servers?.length > 0) {
+        protocols.push({
+          name: 'MCP Server',
+          type: 'mcp',
+          tools: data.mcp.servers.flatMap(s => s.tools || []),
+          resources: data.mcp.servers.flatMap(s => s.resources || []),
+          transports: data.mcp.servers.flatMap(s => s.transport ? [{ type: s.transport }] : [])
+        });
+      }
+    }
+
+    if (protocols.length === 0) {
+      protocolsContainer.innerHTML = '<p class="placeholder">No protocols detected</p>';
+    } else {
+      protocolsContainer.innerHTML = protocols.map(protocol => renderProtocol(protocol, data)).join('');
+    }
+
+    // Update AI headers
     const headersList = document.getElementById('ai-headers-list');
     if (data.aiHeaders && data.aiHeaders.length > 0) {
       headersList.innerHTML = data.aiHeaders.map(header => `
@@ -391,24 +791,22 @@
       headersList.innerHTML = '<p class="placeholder">No AI headers detected</p>';
     }
 
-    // Update permissions
+    // Update permissions from policies or headers
     updatePermission('training', data.permissions?.training);
     updatePermission('inference', data.permissions?.inference);
     updatePermission('attribution', data.permissions?.attribution);
     updatePermission('ratelimit', data.permissions?.rateLimit);
 
-    // Update actions
-    const actionsList = document.getElementById('actions-list');
-    if (data.actions && data.actions.length > 0) {
-      actionsList.innerHTML = data.actions.map(action => `
-        <div class="action-item">
-          <div class="action-name">${action.name}</div>
-          <div class="action-desc">${action.description || ''}</div>
-          <div class="action-endpoint">${action.method || 'GET'} ${action.endpoint}</div>
-        </div>
-      `).join('');
+    // Show policies source if available
+    const policiesSource = document.getElementById('policies-source');
+    if (data.policies) {
+      policiesSource.style.display = 'block';
+      policiesSource.innerHTML = `<span class="source-badge">Source: arw-policies.json</span>`;
+    } else if (data.aiHeaders?.length > 0) {
+      policiesSource.style.display = 'block';
+      policiesSource.innerHTML = `<span class="source-badge">Source: HTTP Headers</span>`;
     } else {
-      actionsList.innerHTML = '<p class="placeholder">No actions available</p>';
+      policiesSource.style.display = 'none';
     }
 
     // Update auth section
@@ -416,21 +814,148 @@
     if (data.auth) {
       authSection.innerHTML = `
         <div class="auth-item">
-          <span class="permission-icon">🔐</span>
           <span class="permission-label">Type</span>
           <span class="permission-value">${data.auth.type || 'Unknown'}</span>
         </div>
         ${data.auth.endpoint ? `
           <div class="auth-item">
-            <span class="permission-icon">🔗</span>
             <span class="permission-label">Endpoint</span>
             <span class="permission-value">${data.auth.endpoint}</span>
           </div>
         ` : ''}
+        ${data.auth.scopes ? `
+          <div class="auth-item">
+            <span class="permission-label">Scopes</span>
+            <span class="permission-value">${data.auth.scopes.join(', ')}</span>
+          </div>
+        ` : ''}
       `;
     } else {
-      authSection.innerHTML = '<p class="placeholder">No authentication protocols detected</p>';
+      authSection.innerHTML = '<p class="placeholder">No authentication configured</p>';
     }
+  }
+
+  /**
+   * Render a single protocol card
+   */
+  function renderProtocol(protocol, data) {
+    const type = (protocol.type || 'unknown').toLowerCase();
+    const typeBadgeClass = type === 'mcp' ? 'protocol-type-mcp' : type === 'rest' ? 'protocol-type-rest' : 'protocol-type-other';
+
+    let content = `
+      <div class="protocol-card protocol-card-${type}">
+        <div class="protocol-card-header">
+          <span class="protocol-card-name">${protocol.name}</span>
+          <span class="protocol-type-badge ${typeBadgeClass}">${type.toUpperCase()}</span>
+        </div>
+    `;
+
+    if (protocol.description) {
+      content += `<div class="protocol-card-desc">${protocol.description}</div>`;
+    }
+
+    if (protocol.endpoint) {
+      content += `<div class="protocol-card-endpoint"><code>${protocol.endpoint}</code></div>`;
+    }
+
+    if (protocol.version) {
+      content += `<div class="protocol-card-version">Version: ${protocol.version}</div>`;
+    }
+
+    // REST-specific: actions
+    if (type === 'rest') {
+      const actions = protocol.actions || data.actions || [];
+      if (actions.length > 0) {
+        content += `
+          <div class="protocol-section">
+            <div class="protocol-section-title">Actions (${actions.length})</div>
+            <div class="mcp-tools-list">
+              ${actions.map(action => `
+                <div class="mcp-tool-item">
+                  <div class="mcp-tool-header">
+                    <span class="mcp-tool-name">${action.name || action.id}</span>
+                    ${action.auth && action.auth !== 'none' ? `<span class="mcp-auth-badge">${action.auth}</span>` : ''}
+                  </div>
+                  ${action.description ? `<span class="mcp-tool-desc">${action.description}</span>` : ''}
+                  ${action.endpoint ? `<span class="mcp-tool-desc" style="color: var(--accent-cyan); font-family: monospace;">${action.method || 'GET'} ${action.endpoint}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    // MCP-specific: transports, tools, resources, prompts
+    if (type === 'mcp') {
+      // Transports
+      if (protocol.transports && protocol.transports.length > 0) {
+        content += `
+          <div class="protocol-section">
+            <div class="protocol-section-title">Transports</div>
+            <div class="transport-badges">
+              ${protocol.transports.map(t => `
+                <span class="mcp-transport-badge ${t.type}">${t.type}</span>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Tools
+      if (protocol.tools && protocol.tools.length > 0) {
+        content += `
+          <div class="protocol-section">
+            <div class="protocol-section-title">Tools (${protocol.tools.length})</div>
+            <div class="mcp-tools-list">
+              ${protocol.tools.map(tool => `
+                <div class="mcp-tool-item">
+                  <div class="mcp-tool-header">
+                    <span class="mcp-tool-name">${tool.name}</span>
+                    ${tool.auth && tool.auth !== 'none' ? `<span class="mcp-auth-badge">${tool.auth}</span>` : ''}
+                  </div>
+                  ${tool.description ? `<span class="mcp-tool-desc">${tool.description}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Resources
+      if (protocol.resources && protocol.resources.length > 0) {
+        content += `
+          <div class="protocol-section">
+            <div class="protocol-section-title">Resources (${protocol.resources.length})</div>
+            <div class="mcp-resources-list">
+              ${protocol.resources.map(res => `
+                <code class="mcp-resource-uri">${res.uri || res.name || res}</code>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      // Prompts
+      if (protocol.prompts && protocol.prompts.length > 0) {
+        content += `
+          <div class="protocol-section">
+            <div class="protocol-section-title">Prompts (${protocol.prompts.length})</div>
+            <div class="mcp-prompts-list">
+              ${protocol.prompts.map(prompt => `
+                <div class="mcp-prompt-item">
+                  <span class="mcp-prompt-name">${prompt.name}</span>
+                  ${prompt.description ? `<span class="mcp-prompt-desc">${prompt.description}</span>` : ''}
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    content += '</div>';
+    return content;
   }
 
   /**
@@ -441,25 +966,30 @@
     const valueEl = document.getElementById(`${type}-value`);
 
     if (value === true || value === 'allowed') {
-      icon.textContent = '✓';
+      icon.textContent = '+';
+      icon.style.color = 'var(--success)';
       valueEl.textContent = 'Allowed';
-      valueEl.style.color = '#22c55e';
+      valueEl.style.color = 'var(--success)';
     } else if (value === false || value === 'disallowed') {
-      icon.textContent = '✗';
+      icon.textContent = '-';
+      icon.style.color = 'var(--error)';
       valueEl.textContent = 'Disallowed';
-      valueEl.style.color = '#ef4444';
+      valueEl.style.color = 'var(--error)';
     } else if (value === 'required') {
-      icon.textContent = '⚠️';
+      icon.textContent = '!';
+      icon.style.color = 'var(--warning)';
       valueEl.textContent = 'Required';
-      valueEl.style.color = '#f59e0b';
+      valueEl.style.color = 'var(--warning)';
     } else if (value) {
-      icon.textContent = 'ℹ️';
+      icon.textContent = 'i';
+      icon.style.color = 'var(--text-secondary)';
       valueEl.textContent = value;
-      valueEl.style.color = '#64748b';
+      valueEl.style.color = 'var(--text-secondary)';
     } else {
-      icon.textContent = '⭕';
+      icon.textContent = '-';
+      icon.style.color = 'var(--text-secondary)';
       valueEl.textContent = 'Unknown';
-      valueEl.style.color = '#94a3b8';
+      valueEl.style.color = 'var(--text-secondary)';
     }
   }
 
@@ -467,36 +997,22 @@
    * Update Discovery tab
    */
   function updateDiscoveryTab(data) {
-    // llms.txt
     updateDiscoveryItem('llms', data.discoveries?.llmsTxt);
 
-    // .well-known
     const wellKnownFound = data.discoveries?.wellKnown?.manifest?.exists;
     updateDiscoveryItem('wellknown', {
       exists: wellKnownFound,
       url: data.discoveries?.wellKnown?.manifest?.url
     });
 
-    // robots.txt
     updateDiscoveryItem('robots', data.discoveries?.robotsTxt);
 
-    // Machine views
-    const machineViews = data.discoveries?.machineViews || [];
-    updateDiscoveryItem('machineview', {
-      exists: machineViews.length > 0,
-      count: machineViews.length,
-      urls: machineViews.map(mv => mv.url)
+    // ARW Policies detection
+    updateDiscoveryItem('policies', {
+      exists: data.policies !== undefined && data.policies !== null,
+      data: data.policies
     });
 
-    // Meta tags
-    const metaTags = data.discoveries?.metaTags || [];
-    updateDiscoveryItem('meta', {
-      exists: metaTags.length > 0,
-      count: metaTags.length,
-      tags: metaTags
-    });
-
-    // Content structure
     if (data.discoveries?.wellKnown?.manifest?.data?.content) {
       const contentStructure = document.getElementById('content-structure');
       const contentTree = document.getElementById('content-tree');
@@ -519,12 +1035,12 @@
     const details = document.getElementById(`${id}-details`);
 
     if (data?.exists) {
-      icon.textContent = '✓';
+      icon.textContent = '+';
+      icon.style.color = 'var(--success)';
       status.textContent = data.count ? `${data.count} Found` : 'Found';
       status.classList.add('found');
       status.classList.remove('not-found');
 
-      // Build details HTML
       let detailsHtml = '';
       if (data.url) {
         detailsHtml += `<strong>URL:</strong> <a href="${data.url}" target="_blank">${data.url}</a><br>`;
@@ -546,16 +1062,31 @@
         ).join('<br>');
       }
 
+      // Policies-specific details
+      if (data.data && id === 'policies') {
+        const policies = data.data;
+        if (policies.aiTraining !== undefined) {
+          detailsHtml += `<strong>AI Training:</strong> ${policies.aiTraining ? 'Allowed' : 'Disallowed'}<br>`;
+        }
+        if (policies.aiInference !== undefined) {
+          detailsHtml += `<strong>AI Inference:</strong> ${policies.aiInference ? 'Allowed' : 'Disallowed'}<br>`;
+        }
+        if (policies.attribution) {
+          detailsHtml += `<strong>Attribution:</strong> ${policies.attribution}<br>`;
+        }
+      }
+
       details.innerHTML = detailsHtml || '';
       details.style.display = detailsHtml ? 'block' : 'none';
     } else {
-      icon.textContent = '✗';
+      icon.textContent = '-';
+      icon.style.color = 'var(--text-secondary)';
       status.textContent = 'Not Found';
       status.classList.add('not-found');
       status.classList.remove('found');
 
       if (data?.error) {
-        details.innerHTML = `<span style="color: #ef4444;">Error: ${data.error}</span>`;
+        details.innerHTML = `<span style="color: var(--error);">Error: ${data.error}</span>`;
         details.style.display = 'block';
       } else {
         details.style.display = 'none';
@@ -633,6 +1164,14 @@
    * Format currency
    */
   function formatCurrency(amount) {
+    if (amount < 0.01) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 4,
+        maximumFractionDigits: 6
+      }).format(amount);
+    }
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
@@ -649,13 +1188,11 @@
     const scoreRing = document.getElementById('geo-score-ring');
     const geoStatus = document.getElementById('geo-status');
 
-    // Subscore elements
     const authorityEl = document.getElementById('geo-authority');
     const evidenceEl = document.getElementById('geo-evidence');
     const semanticEl = document.getElementById('geo-semantic');
     const arwReadinessEl = document.getElementById('geo-arw-readiness');
 
-    // Detail elements
     const extLinksEl = document.getElementById('geo-ext-links');
     const extDomainsEl = document.getElementById('geo-ext-domains');
     const statisticsEl = document.getElementById('geo-statistics');
@@ -663,14 +1200,11 @@
     const entitiesEl = document.getElementById('geo-entities');
     const wordCountEl = document.getElementById('geo-word-count');
 
-    // Check if we have GEO data
     if (data.geo && data.geo.geoScore !== undefined) {
-      // Display GEO score
       const score = data.geo.geoScore;
       scoreValue.textContent = score;
       animateScoreRing(scoreRing, score);
 
-      // Display subscores
       if (data.geo.subscores) {
         authorityEl.textContent = data.geo.subscores.authority || 0;
         evidenceEl.textContent = data.geo.subscores.evidence || 0;
@@ -678,7 +1212,6 @@
         arwReadinessEl.textContent = data.geo.subscores.arwReadiness || 0;
       }
 
-      // Display detailed metrics
       if (data.geo.metrics) {
         extLinksEl.textContent = data.geo.metrics.citations?.externalLinks || 0;
         extDomainsEl.textContent = data.geo.metrics.citations?.externalDomains?.length || 0;
@@ -694,9 +1227,8 @@
 
       geoStatus.textContent = 'Analysis complete';
     } else {
-      // No GEO data yet
       scoreValue.textContent = '--';
-      scoreRing.style.strokeDashoffset = '565';
+      scoreRing.style.strokeDashoffset = '502';
 
       authorityEl.textContent = '--';
       evidenceEl.textContent = '--';
@@ -720,16 +1252,13 @@
   function animateScoreRing(ringElement, score) {
     if (!ringElement) return;
 
-    // Circle circumference = 2 * PI * radius
-    // radius = 90 (from SVG), so circumference = 565.48...
-    const circumference = 565;
+    // Circle circumference = 2 * PI * radius (80) = 502
+    const circumference = 502;
     const progress = (score / 100) * circumference;
     const offset = circumference - progress;
 
-    // Update stroke-dashoffset to show progress
     ringElement.style.strokeDashoffset = offset;
 
-    // Update color based on score
     ringElement.classList.remove('score-excellent', 'score-good', 'score-average', 'score-poor');
     if (score >= 80) {
       ringElement.classList.add('score-excellent');
@@ -739,20 +1268,6 @@
       ringElement.classList.add('score-average');
     } else {
       ringElement.classList.add('score-poor');
-    }
-  }
-
-  /**
-   * Open full GEO analysis in ARW Inspector
-   */
-  function openFullAnalysis() {
-    const url = currentData?.url;
-    if (url) {
-      // Open ARW Inspector app with the current URL
-      const inspectorUrl = `http://localhost:3003?url=${encodeURIComponent(url)}`;
-      chrome.tabs.create({ url: inspectorUrl });
-    } else {
-      alert('No URL available for analysis');
     }
   }
 

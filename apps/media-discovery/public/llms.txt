@@ -150,6 +150,150 @@ protocols:
     type: rest
     endpoint: /api
 
+  - name: 'Media Gateway MCP Server'
+    type: mcp
+    version: '2024-11-05'
+    transports:
+      - type: stdio
+        command: 'npx agentics-hackathon mcp'
+      - type: sse
+        endpoint: 'https://mcp.media-discovery.agentics.org/sse'
+    description: 'Model Context Protocol server for AI agent integration'
+    tools:
+      - id: semantic_search
+        name: 'Semantic Search'
+        description: 'Search for movies and TV shows using natural language queries'
+        auth: none
+        parameters:
+          - name: query
+            type: string
+            required: true
+            description: 'Natural language search query'
+          - name: filters
+            type: object
+            required: false
+            description: 'Filter by mediaType, ratingMin, releaseYear, genres'
+          - name: limit
+            type: number
+            required: false
+            description: 'Max results (1-50, default 10)'
+          - name: explain
+            type: boolean
+            required: false
+            description: 'Include AI explanations'
+
+      - id: get_recommendations
+        name: 'Get Recommendations'
+        description: 'Get personalized content recommendations based on preferences or similar content'
+        auth: none
+        parameters:
+          - name: basedOn
+            type: object
+            required: false
+            description: 'Get recommendations similar to specific content (contentId, mediaType)'
+          - name: preferences
+            type: object
+            required: false
+            description: 'User preferences (genres, mood, excludeContentIds)'
+          - name: limit
+            type: number
+            required: false
+            description: 'Max results (1-50, default 10)'
+
+      - id: get_content_details
+        name: 'Get Content Details'
+        description: 'Get detailed information about a specific movie or TV show'
+        auth: none
+        parameters:
+          - name: contentId
+            type: string
+            required: true
+            description: 'Content ID'
+          - name: include
+            type: array
+            required: false
+            description: 'Additional info: credits, images, availability, similar'
+
+      - id: check_availability
+        name: 'Check Availability'
+        description: 'Check where specific content is available to watch'
+        auth: none
+        parameters:
+          - name: contentId
+            type: string
+            required: true
+            description: 'Content ID to check'
+          - name: region
+            type: string
+            required: false
+            description: 'Region code (e.g., US, UK). Default: US'
+          - name: platforms
+            type: array
+            required: false
+            description: 'Specific platforms to check'
+
+      - id: get_genres
+        name: 'Get Genres'
+        description: 'Get list of available content genres'
+        auth: none
+        parameters:
+          - name: mediaType
+            type: string
+            required: false
+            description: 'Filter by media type: movie, tv, all'
+
+      - id: list_devices
+        name: 'List Devices'
+        description: "List user's registered devices with capabilities and online status"
+        auth: required
+        scopes:
+          - 'devices:read'
+        parameters:
+          - name: includeOffline
+            type: boolean
+            required: false
+            description: 'Include offline devices'
+
+      - id: initiate_playback
+        name: 'Initiate Playback'
+        description: 'Start content playback on a target device with deep link generation'
+        auth: required
+        scopes:
+          - 'playback:control'
+        parameters:
+          - name: contentId
+            type: string
+            required: true
+            description: 'Content ID to play'
+          - name: deviceId
+            type: string
+            required: true
+            description: 'Target device ID'
+          - name: platformId
+            type: string
+            required: false
+            description: 'Preferred platform'
+          - name: startPosition
+            type: number
+            required: false
+            description: 'Start position in seconds'
+
+    resources:
+      - uri: 'media://genres'
+        name: 'Content Genres'
+        description: 'Available movie and TV genres'
+        mimeType: 'application/json'
+      - uri: 'media://platforms'
+        name: 'Streaming Platforms'
+        description: 'Supported streaming platforms'
+        mimeType: 'application/json'
+
+    prompts:
+      - name: 'discover_content'
+        description: 'Help users discover movies and TV shows'
+      - name: 'plan_watch_session'
+        description: 'Plan a watch session based on mood and preferences'
+
 # Usage policies
 policies:
   training:

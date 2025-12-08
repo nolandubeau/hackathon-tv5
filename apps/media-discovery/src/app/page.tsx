@@ -137,6 +137,19 @@ export default function HomePage() {
         {/* Admin Widget - Development Only */}
         {process.env.NODE_ENV === 'development' && <AdminWidget />}
 
+        {/* Top Navigation */}
+        <nav className="border-b border-border-subtle bg-bg-primary/80 backdrop-blur-sm sticky top-0 z-10">
+          <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div className="headline-h3 text-text-primary">AI Media Discovery</div>
+            <Link
+              href="/about"
+              className="text-text-secondary hover:text-accent-cyan transition-colors text-sm md:text-base"
+            >
+              About ARW
+            </Link>
+          </div>
+        </nav>
+
         {/* Hero Section */}
         <section className="relative py-16 md:py-24 px-4 text-center bg-gradient-to-b from-accent-cyan/10 to-transparent">
           {hasProfile && (
@@ -241,7 +254,7 @@ export default function HomePage() {
             </a>{' '}
             &bull; Global Hackathon TV5MONDE
           </p>
-          <p className="flex flex-wrap items-center justify-center gap-2">
+          <p className="flex flex-wrap items-center justify-center gap-2 mb-3">
             Powered by{' '}
             <a href="https://www.themoviedb.org/" className="underline hover:text-accent-cyan">
               TMDB
@@ -249,7 +262,11 @@ export default function HomePage() {
             &bull; Built with{' '}
             <a href="https://arw.dev" className="underline hover:text-accent-cyan">
               ARW
-            </a>
+            </a>{' '}
+            &bull;{' '}
+            <Link href="/about" className="underline hover:text-accent-cyan">
+              About
+            </Link>
           </p>
           <div className="mt-3 flex items-center justify-center gap-4 flex-wrap">
             <a
@@ -293,6 +310,16 @@ export default function HomePage() {
     <main className="min-h-screen">
       {/* Admin Widget - Development Only */}
       {process.env.NODE_ENV === 'development' && <AdminWidget />}
+
+      {/* Top Navigation - Discovery Flow */}
+      <nav className="absolute top-0 right-0 z-10 p-4">
+        <Link
+          href="/about"
+          className="text-text-secondary hover:text-accent-cyan transition-colors text-sm"
+        >
+          About ARW
+        </Link>
+      </nav>
 
       {/* SCREEN 1: SIGN-IN */}
       <section

@@ -1,12 +1,18 @@
-/* GEO Tab Styles */
+/* ========================================
+   GEO TAB STYLES - Cool Midnight Theme
+   Generative Engine Optimization Analysis
+   ======================================== */
 
 .section-subtitle {
-  color: #6b7280;
+  color: var(--text-secondary);
   font-size: 0.875rem;
   margin-top: 0.25rem;
   margin-bottom: 1.5rem;
 }
 
+/* ========================================
+   GEO SCORE DISPLAY
+   ======================================== */
 .geo-score-container {
   display: flex;
   justify-content: center;
@@ -15,20 +21,24 @@
 
 .geo-score-circle {
   position: relative;
-  width: 200px;
-  height: 200px;
+  width: 180px;
+  height: 180px;
 }
 
 .score-ring {
   transform: rotate(-90deg);
+  filter: drop-shadow(0 0 10px rgba(78, 205, 196, 0.3));
 }
 
 .score-ring-circle {
+  stroke: var(--border-subtle);
   transition: stroke-dashoffset 0.5s ease;
 }
 
 .score-ring-progress {
-  transition: stroke-dashoffset 1s ease, stroke 0.3s ease;
+  stroke: var(--accent-cyan);
+  transition: stroke-dashoffset 1s cubic-bezier(0.16, 1, 0.3, 1), stroke 0.3s ease;
+  stroke-linecap: round;
 }
 
 .score-text {
@@ -40,20 +50,27 @@
 }
 
 .score-value {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 700;
-  color: #1e40af;
+  color: var(--accent-cyan);
   line-height: 1;
+  background: linear-gradient(135deg, var(--text-primary) 0%, var(--accent-cyan) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
 
 .score-label {
-  font-size: 0.875rem;
-  color: #6b7280;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.1em;
   margin-top: 0.5rem;
 }
 
+/* ========================================
+   GEO SUBSCORES GRID
+   ======================================== */
 .geo-subscores-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -65,32 +82,41 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 0.75rem;
-  background: #f9fafb;
-  border-radius: 6px;
-  border: 1px solid #e5e7eb;
+  padding: 1rem;
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  transition: all 0.2s ease;
+}
+
+.geo-subscore:hover {
+  border-color: rgba(78, 205, 196, 0.3);
+  transform: translateY(-2px);
 }
 
 .subscore-value {
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-weight: 700;
-  color: #2563eb;
+  color: var(--accent-cyan);
   margin-bottom: 0.25rem;
 }
 
 .subscore-name {
-  font-size: 0.7rem;
-  color: #6b7280;
+  font-size: 0.65rem;
+  color: var(--text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.05em;
   text-align: center;
 }
 
+/* ========================================
+   GEO DETAILS
+   ======================================== */
 .geo-details {
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  padding: 0.75rem;
+  background: var(--bg-elevated);
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  padding: 1rem;
   margin: 1rem 0;
 }
 
@@ -98,118 +124,101 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.4rem 0;
+  padding: 0.5rem 0;
 }
 
 .detail-row:not(:last-child) {
-  border-bottom: 1px solid #f3f4f6;
+  border-bottom: 1px solid rgba(48, 54, 61, 0.5);
 }
 
 .detail-label {
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--text-secondary);
   font-weight: 500;
 }
 
 .detail-value {
   font-size: 0.75rem;
-  color: #111827;
+  color: var(--text-primary);
   font-weight: 600;
+  font-family: 'Monaco', 'Menlo', monospace;
 }
 
+/* ========================================
+   GEO INFO BOX
+   ======================================== */
 .geo-info-box {
-  background: #f0f9ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.1) 0%, rgba(42, 157, 143, 0.05) 100%);
+  border: 1px solid rgba(78, 205, 196, 0.2);
+  border-radius: 12px;
   padding: 1rem;
   margin: 1.5rem 0;
 }
 
-.info-row {
+.geo-info-box .info-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 0;
 }
 
-.info-row:not(:last-child) {
-  border-bottom: 1px solid #dbeafe;
+.geo-info-box .info-row:not(:last-child) {
+  border-bottom: 1px solid rgba(78, 205, 196, 0.15);
 }
 
-.info-label {
+.geo-info-box .info-label {
   font-weight: 500;
-  color: #1e40af;
+  color: var(--accent-cyan);
+  font-size: 0.75rem;
 }
 
-.info-value {
-  color: #374151;
+.geo-info-box .info-value {
+  color: var(--text-primary);
+  font-size: 0.75rem;
 }
 
-.geo-actions {
-  display: flex;
-  gap: 0.75rem;
-  margin: 1.5rem 0;
-}
-
-.geo-actions .btn {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.geo-note {
-  background: #fef3c7;
-  border: 1px solid #fde047;
-  border-radius: 8px;
-  padding: 1rem;
-  margin-top: 1.5rem;
-}
-
-.geo-note p {
-  margin: 0;
-  font-size: 0.875rem;
-  color: #78350f;
-  line-height: 1.5;
-}
-
-.geo-note strong {
-  color: #92400e;
-}
-
-/* Score ring colors based on score */
+/* ========================================
+   SCORE RING COLORS
+   ======================================== */
 .score-excellent {
-  stroke: #10b981 !important; /* green */
+  stroke: var(--success) !important;
 }
 
 .score-good {
-  stroke: #3b82f6 !important; /* blue */
+  stroke: var(--accent-cyan) !important;
 }
 
 .score-average {
-  stroke: #f59e0b !important; /* orange */
+  stroke: var(--warning) !important;
 }
 
 .score-poor {
-  stroke: #ef4444 !important; /* red */
+  stroke: var(--error) !important;
 }
 
-/* Loading state for GEO */
+/* Score value color variants */
+.score-value.excellent { color: var(--success); }
+.score-value.good { color: var(--accent-cyan); }
+.score-value.average { color: var(--warning); }
+.score-value.poor { color: var(--error); }
+
+/* ========================================
+   GEO LOADING STATE
+   ======================================== */
 .geo-loading {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: #6b7280;
+  color: var(--text-secondary);
 }
 
 .geo-loading .spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e5e7eb;
-  border-top-color: #2563eb;
+  border: 3px solid var(--border-subtle);
+  border-top-color: var(--accent-cyan);
   border-radius: 50%;
   animation: spin 1s linear infinite;
   margin-bottom: 1rem;
@@ -218,3 +227,153 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ========================================
+   GEO ANALYSIS BREAKDOWN
+   ======================================== */
+.geo-breakdown {
+  margin-top: 1.5rem;
+}
+
+.breakdown-header {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.breakdown-header::before {
+  content: '';
+  width: 3px;
+  height: 12px;
+  background: var(--accent-cyan);
+  border-radius: 2px;
+}
+
+.breakdown-item {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border-left: 3px solid var(--accent-cyan);
+  transition: transform 0.2s ease;
+}
+
+.breakdown-item:hover {
+  transform: translateX(3px);
+}
+
+.breakdown-icon {
+  font-size: 1.25rem;
+  margin-right: 0.75rem;
+}
+
+.breakdown-content {
+  flex: 1;
+}
+
+.breakdown-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.breakdown-desc {
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  margin-top: 0.15rem;
+}
+
+.breakdown-score {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--accent-cyan);
+  font-family: 'Monaco', 'Menlo', monospace;
+}
+
+/* ========================================
+   GEO RECOMMENDATIONS
+   ======================================== */
+.geo-recommendations {
+  margin-top: 1.5rem;
+}
+
+.recommendation-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border-subtle);
+}
+
+.recommendation-icon {
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.recommendation-text {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.recommendation-item.success {
+  border-left: 3px solid var(--success);
+}
+
+.recommendation-item.warning {
+  border-left: 3px solid var(--warning);
+}
+
+.recommendation-item.error {
+  border-left: 3px solid var(--error);
+}
+
+/* ========================================
+   ANIMATED SCORE ENTRY
+   ======================================== */
+@keyframes scoreReveal {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.geo-score-circle.animate {
+  animation: scoreReveal 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes subscoreFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.geo-subscore.animate {
+  animation: subscoreFadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.geo-subscore:nth-child(1).animate { animation-delay: 100ms; }
+.geo-subscore:nth-child(2).animate { animation-delay: 150ms; }
+.geo-subscore:nth-child(3).animate { animation-delay: 200ms; }
+.geo-subscore:nth-child(4).animate { animation-delay: 250ms; }

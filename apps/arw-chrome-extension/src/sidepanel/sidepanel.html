@@ -27,40 +27,141 @@
 
     <!-- Tab Navigation -->
     <nav class="tab-nav">
-      <button class="tab-btn active" data-tab="machine-view">
-        Machine View
-      </button>
-      <button class="tab-btn" data-tab="geo">
-        GEO Score
-      </button>
-      <button class="tab-btn" data-tab="token-cost">
-        Token Cost
-      </button>
-      <button class="tab-btn" data-tab="protocols">
-        Protocols
-      </button>
-      <button class="tab-btn" data-tab="discovery">
-        Discovery
-      </button>
+      <button class="tab-btn active" data-tab="discovery">Discovery</button>
+      <button class="tab-btn" data-tab="machine-view">Machine View</button>
+      <button class="tab-btn" data-tab="geo">GEO Score</button>
+      <button class="tab-btn" data-tab="costs">Costs</button>
     </nav>
 
     <!-- Main Content -->
     <main class="main-content">
       <!-- Loading State -->
-      <div id="loading-state" class="state-container">
+      <div id="loading-state" class="state-container" style="display: none;">
         <div class="spinner"></div>
-        <p>Inspecting page...</p>
       </div>
 
       <!-- Error State -->
       <div id="error-state" class="state-container" style="display: none;">
-        <div class="error-icon">⚠️</div>
+        <div class="error-icon">!</div>
         <p class="error-message" id="error-message">No inspection data available</p>
         <button class="btn btn-primary" id="retry-btn">Retry Inspection</button>
       </div>
 
+      <!-- Discovery Tab (First, includes Protocols) -->
+      <div id="discovery-tab" class="tab-content active" style="display: none;">
+        <div class="section">
+          <h2 class="section-title">ARW Enrichment</h2>
+
+          <!-- Discovery Timeline -->
+          <div class="discovery-timeline" id="discovery-timeline">
+            <!-- llms.txt -->
+            <div class="discovery-item llms">
+              <div class="discovery-header">
+                <span class="discovery-icon" id="llms-icon">-</span>
+                <span class="discovery-name">llms.txt</span>
+                <span class="discovery-status" id="llms-status">Checking...</span>
+              </div>
+              <div class="discovery-details" id="llms-details"></div>
+            </div>
+
+            <!-- .well-known -->
+            <div class="discovery-item wellknown">
+              <div class="discovery-header">
+                <span class="discovery-icon" id="wellknown-icon">-</span>
+                <span class="discovery-name">.well-known/arw-manifest.json</span>
+                <span class="discovery-status" id="wellknown-status">Checking...</span>
+              </div>
+              <div class="discovery-details" id="wellknown-details"></div>
+            </div>
+
+            <!-- robots.txt -->
+            <div class="discovery-item robots">
+              <div class="discovery-header">
+                <span class="discovery-icon" id="robots-icon">-</span>
+                <span class="discovery-name">robots.txt</span>
+                <span class="discovery-status" id="robots-status">Checking...</span>
+              </div>
+              <div class="discovery-details" id="robots-details"></div>
+            </div>
+
+            <!-- ARW Policies -->
+            <div class="discovery-item policies">
+              <div class="discovery-header">
+                <span class="discovery-icon" id="policies-icon">-</span>
+                <span class="discovery-name">arw-policies.json</span>
+                <span class="discovery-status" id="policies-status">Checking...</span>
+              </div>
+              <div class="discovery-details" id="policies-details"></div>
+            </div>
+          </div>
+
+          <!-- Content Structure -->
+          <div class="content-structure" id="content-structure" style="display: none; margin-top: 16px;">
+            <h3 style="font-size: 12px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px;">Content Structure</h3>
+            <div class="tree-view" id="content-tree"></div>
+          </div>
+        </div>
+
+        <!-- Protocols Section -->
+        <div class="section" style="margin-top: 16px;">
+          <h2 class="section-title">Protocols</h2>
+          <div id="protocols-container">
+            <p class="placeholder">No protocols detected</p>
+          </div>
+        </div>
+
+        <!-- Policies & Permissions Section -->
+        <div class="section" style="margin-top: 16px;">
+          <h2 class="section-title">Policies & Permissions</h2>
+
+          <!-- Policies from arw-policies.json -->
+          <div class="protocol-group" id="policies-group">
+            <h3 class="protocol-group-title">Content Policies</h3>
+            <div id="policies-list" class="permissions-grid">
+              <div class="permission-item">
+                <span class="permission-icon" id="training-icon">-</span>
+                <span class="permission-label">AI Training</span>
+                <span class="permission-value" id="training-value">Unknown</span>
+              </div>
+              <div class="permission-item">
+                <span class="permission-icon" id="inference-icon">-</span>
+                <span class="permission-label">AI Inference</span>
+                <span class="permission-value" id="inference-value">Unknown</span>
+              </div>
+              <div class="permission-item">
+                <span class="permission-icon" id="attribution-icon">-</span>
+                <span class="permission-label">Attribution</span>
+                <span class="permission-value" id="attribution-value">Unknown</span>
+              </div>
+              <div class="permission-item">
+                <span class="permission-icon" id="ratelimit-icon">-</span>
+                <span class="permission-label">Rate Limit</span>
+                <span class="permission-value" id="ratelimit-value">Unknown</span>
+              </div>
+            </div>
+            <div id="policies-source" class="policies-source" style="display: none;"></div>
+          </div>
+
+          <!-- AI Headers -->
+          <div class="protocol-group" id="ai-headers-group">
+            <h3 class="protocol-group-title">AI Headers</h3>
+            <div id="ai-headers-list" class="protocol-list">
+              <p class="placeholder">No AI headers detected</p>
+            </div>
+          </div>
+
+          <!-- Authentication -->
+          <div class="protocol-group">
+            <h3 class="protocol-group-title">Authentication</h3>
+            <div id="auth-section" class="auth-section">
+              <p class="placeholder">No authentication configured</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <!-- Machine View Tab -->
-      <div id="machine-view-tab" class="tab-content active" style="display: none;">
+      <div id="machine-view-tab" class="tab-content" style="display: none;">
         <div class="section">
           <div class="section-header">
             <h2 class="section-title">Machine View Content</h2>
@@ -71,7 +172,7 @@
           </div>
 
           <div id="machine-view-status" class="status-bar">
-            <span class="status-icon" id="mv-status-icon">⭕</span>
+            <span class="status-icon" id="mv-status-icon">-</span>
             <span class="status-text" id="mv-status-text">Checking for machine view...</span>
           </div>
 
@@ -79,157 +180,33 @@
             <p class="placeholder">No machine view available for this page</p>
           </div>
         </div>
-      </div>
 
-      <!-- Token Cost Tab -->
-      <div id="token-cost-tab" class="tab-content" style="display: none;">
-        <div class="section">
-          <h2 class="section-title">Token Cost Comparison</h2>
-
-          <div class="comparison-grid">
-            <!-- HTML Version -->
-            <div class="comparison-card">
-              <div class="card-header html">
-                <span class="card-icon">🌐</span>
-                <h3>HTML Version</h3>
-              </div>
-              <div class="card-body">
-                <div class="metric">
-                  <span class="metric-label">Size</span>
-                  <span class="metric-value" id="html-size">-</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Estimated Tokens</span>
-                  <span class="metric-value" id="html-tokens">-</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Est. Cost (GPT-4)</span>
-                  <span class="metric-value" id="html-cost">-</span>
-                </div>
-              </div>
+        <!-- Content Analysis -->
+        <div class="section content-analysis">
+          <h2 class="section-title">Content Analysis</h2>
+          <div class="analysis-grid">
+            <div class="analysis-card">
+              <div class="analysis-value" id="word-count">--</div>
+              <div class="analysis-label">Words</div>
             </div>
-
-            <!-- Machine View Version -->
-            <div class="comparison-card">
-              <div class="card-header machine">
-                <span class="card-icon">🤖</span>
-                <h3>Machine View</h3>
-              </div>
-              <div class="card-body">
-                <div class="metric">
-                  <span class="metric-label">Size</span>
-                  <span class="metric-value" id="mv-size">-</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Estimated Tokens</span>
-                  <span class="metric-value" id="mv-tokens">-</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">Est. Cost (GPT-4)</span>
-                  <span class="metric-value" id="mv-cost">-</span>
-                </div>
-              </div>
+            <div class="analysis-card">
+              <div class="analysis-value" id="char-count">--</div>
+              <div class="analysis-label">Characters</div>
+            </div>
+            <div class="analysis-card">
+              <div class="analysis-value" id="chunk-count">--</div>
+              <div class="analysis-label">Chunks</div>
+            </div>
+            <div class="analysis-card">
+              <div class="analysis-value" id="heading-count">--</div>
+              <div class="analysis-label">Headings</div>
             </div>
           </div>
 
-          <!-- Savings Summary -->
-          <div class="savings-summary" id="savings-summary">
-            <h3>Savings with Machine View</h3>
-            <div class="savings-grid">
-              <div class="saving-item">
-                <span class="saving-value" id="size-reduction">-</span>
-                <span class="saving-label">Size Reduction</span>
-              </div>
-              <div class="saving-item">
-                <span class="saving-value" id="token-reduction">-</span>
-                <span class="saving-label">Token Reduction</span>
-              </div>
-              <div class="saving-item">
-                <span class="saving-value" id="cost-savings">-</span>
-                <span class="saving-label">Cost Savings</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Monthly Projection -->
-          <div class="projection-section">
-            <h3>Monthly Projection</h3>
-            <div class="projection-input">
-              <label for="monthly-requests">Requests per month:</label>
-              <input type="number" id="monthly-requests" value="10000" min="1">
-            </div>
-            <div class="projection-results">
-              <div class="projection-item">
-                <span class="projection-label">Bandwidth Saved</span>
-                <span class="projection-value" id="bandwidth-saved">-</span>
-              </div>
-              <div class="projection-item">
-                <span class="projection-label">Tokens Saved</span>
-                <span class="projection-value" id="tokens-saved">-</span>
-              </div>
-              <div class="projection-item">
-                <span class="projection-label">Cost Saved</span>
-                <span class="projection-value" id="cost-saved">-</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Protocols Tab -->
-      <div id="protocols-tab" class="tab-content" style="display: none;">
-        <div class="section">
-          <h2 class="section-title">ARW Protocols & Actions</h2>
-
-          <!-- AI Headers -->
-          <div class="protocol-group">
-            <h3 class="protocol-group-title">AI Headers</h3>
-            <div id="ai-headers-list" class="protocol-list">
-              <p class="placeholder">No AI headers detected</p>
-            </div>
-          </div>
-
-          <!-- Available Actions -->
-          <div class="protocol-group">
-            <h3 class="protocol-group-title">Available Actions</h3>
-            <div id="actions-list" class="actions-list">
-              <p class="placeholder">No actions available</p>
-            </div>
-          </div>
-
-          <!-- Permissions -->
-          <div class="protocol-group">
-            <h3 class="protocol-group-title">Permissions</h3>
-            <div id="permissions-list" class="permissions-grid">
-              <div class="permission-item">
-                <span class="permission-icon" id="training-icon">⭕</span>
-                <span class="permission-label">AI Training</span>
-                <span class="permission-value" id="training-value">Unknown</span>
-              </div>
-              <div class="permission-item">
-                <span class="permission-icon" id="inference-icon">⭕</span>
-                <span class="permission-label">AI Inference</span>
-                <span class="permission-value" id="inference-value">Unknown</span>
-              </div>
-              <div class="permission-item">
-                <span class="permission-icon" id="attribution-icon">⭕</span>
-                <span class="permission-label">Attribution</span>
-                <span class="permission-value" id="attribution-value">Unknown</span>
-              </div>
-              <div class="permission-item">
-                <span class="permission-icon" id="ratelimit-icon">⭕</span>
-                <span class="permission-label">Rate Limit</span>
-                <span class="permission-value" id="ratelimit-value">Unknown</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- OAuth/Auth Actions -->
-          <div class="protocol-group">
-            <h3 class="protocol-group-title">Authentication</h3>
-            <div id="auth-section" class="auth-section">
-              <p class="placeholder">No authentication protocols detected</p>
-            </div>
+          <!-- Entity Tags -->
+          <div id="entity-container" style="display: none;">
+            <h3 style="font-size: 11px; color: var(--text-secondary); margin: 12px 0 8px; text-transform: uppercase; letter-spacing: 0.5px;">Detected Entities</h3>
+            <div class="entity-tags" id="entity-tags"></div>
           </div>
         </div>
       </div>
@@ -243,9 +220,9 @@
           <!-- GEO Score Display -->
           <div class="geo-score-container">
             <div class="geo-score-circle">
-              <svg class="score-ring" width="200" height="200">
-                <circle class="score-ring-circle" stroke="#e5e7eb" stroke-width="12" fill="transparent" r="90" cx="100" cy="100"/>
-                <circle id="geo-score-ring" class="score-ring-progress" stroke="#2563eb" stroke-width="12" fill="transparent" r="90" cx="100" cy="100" stroke-dasharray="565" stroke-dashoffset="565"/>
+              <svg class="score-ring" width="180" height="180">
+                <circle class="score-ring-circle" stroke-width="10" fill="transparent" r="80" cx="90" cy="90"/>
+                <circle id="geo-score-ring" class="score-ring-progress" stroke-width="10" fill="transparent" r="80" cx="90" cy="90" stroke-dasharray="502" stroke-dashoffset="502"/>
               </svg>
               <div class="score-text">
                 <div class="score-value" id="geo-score-value">--</div>
@@ -313,83 +290,117 @@
               <span class="info-value" id="geo-status">Ready to analyze</span>
             </div>
           </div>
-
-          <!-- Actions -->
-          <div class="geo-actions">
-            <button class="btn btn-primary" id="open-full-analysis">
-              Open Full Analysis
-            </button>
-          </div>
-
-          <!-- Note -->
-          <div class="geo-note">
-            <p><strong>Note:</strong> GEO analysis runs automatically on page load. For AI-enhanced analysis with LLM, click "Open Full Analysis" to use the ARW Inspector app.</p>
-          </div>
         </div>
       </div>
 
-      <!-- Discovery Tab -->
-      <div id="discovery-tab" class="tab-content" style="display: none;">
+      <!-- Costs Tab (Combined Token + Model Costs) -->
+      <div id="costs-tab" class="tab-content" style="display: none;">
         <div class="section">
-          <h2 class="section-title">Discovery Results</h2>
+          <h2 class="section-title">Token & Model Costs</h2>
 
-          <!-- Discovery Timeline -->
-          <div class="discovery-timeline" id="discovery-timeline">
-            <!-- llms.txt -->
-            <div class="discovery-item">
-              <div class="discovery-header">
-                <span class="discovery-icon" id="llms-icon">⭕</span>
-                <span class="discovery-name">llms.txt</span>
-                <span class="discovery-status" id="llms-status">Checking...</span>
+          <!-- Quick Summary -->
+          <div class="comparison-grid">
+            <!-- HTML Version -->
+            <div class="comparison-card">
+              <div class="card-header html">
+                <h3>HTML Version</h3>
               </div>
-              <div class="discovery-details" id="llms-details"></div>
+              <div class="card-body">
+                <div class="metric">
+                  <span class="metric-label">Size</span>
+                  <span class="metric-value" id="html-size">-</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Tokens</span>
+                  <span class="metric-value" id="html-tokens">-</span>
+                </div>
+              </div>
             </div>
 
-            <!-- .well-known -->
-            <div class="discovery-item">
-              <div class="discovery-header">
-                <span class="discovery-icon" id="wellknown-icon">⭕</span>
-                <span class="discovery-name">.well-known/arw-manifest.json</span>
-                <span class="discovery-status" id="wellknown-status">Checking...</span>
+            <!-- Machine View Version -->
+            <div class="comparison-card">
+              <div class="card-header machine">
+                <h3>Machine View</h3>
               </div>
-              <div class="discovery-details" id="wellknown-details"></div>
-            </div>
-
-            <!-- robots.txt -->
-            <div class="discovery-item">
-              <div class="discovery-header">
-                <span class="discovery-icon" id="robots-icon">⭕</span>
-                <span class="discovery-name">robots.txt</span>
-                <span class="discovery-status" id="robots-status">Checking...</span>
+              <div class="card-body">
+                <div class="metric">
+                  <span class="metric-label">Size</span>
+                  <span class="metric-value" id="mv-size">-</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">Tokens</span>
+                  <span class="metric-value" id="mv-tokens">-</span>
+                </div>
               </div>
-              <div class="discovery-details" id="robots-details"></div>
-            </div>
-
-            <!-- Machine Views -->
-            <div class="discovery-item">
-              <div class="discovery-header">
-                <span class="discovery-icon" id="machineview-icon">⭕</span>
-                <span class="discovery-name">Machine Views</span>
-                <span class="discovery-status" id="machineview-status">Checking...</span>
-              </div>
-              <div class="discovery-details" id="machineview-details"></div>
-            </div>
-
-            <!-- Meta Tags -->
-            <div class="discovery-item">
-              <div class="discovery-header">
-                <span class="discovery-icon" id="meta-icon">⭕</span>
-                <span class="discovery-name">ARW Meta Tags</span>
-                <span class="discovery-status" id="meta-status">Checking...</span>
-              </div>
-              <div class="discovery-details" id="meta-details"></div>
             </div>
           </div>
 
-          <!-- Content Structure -->
-          <div class="content-structure" id="content-structure" style="display: none;">
-            <h3>Content Structure</h3>
-            <div class="tree-view" id="content-tree"></div>
+          <!-- Savings Summary -->
+          <div class="savings-summary" id="savings-summary">
+            <h3>Savings with Machine View</h3>
+            <div class="savings-grid">
+              <div class="saving-item">
+                <span class="saving-value" id="size-reduction">-</span>
+                <span class="saving-label">Size Reduction</span>
+              </div>
+              <div class="saving-item">
+                <span class="saving-value" id="token-reduction">-</span>
+                <span class="saving-label">Token Reduction</span>
+              </div>
+              <div class="saving-item">
+                <span class="saving-value" id="cost-savings">-</span>
+                <span class="saving-label">Cost Savings</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Model Cost Comparison -->
+        <div class="section" style="margin-top: 16px;">
+          <h2 class="section-title">AI Model Comparison</h2>
+          <p style="font-size: 11px; color: var(--text-secondary); margin-bottom: 12px;">
+            Live data from <a href="https://models.dev" target="_blank" style="color: var(--accent-cyan);">models.dev</a>
+          </p>
+
+          <!-- Provider Filters (dynamically populated) -->
+          <div class="model-filters" id="provider-filters">
+            <button class="filter-btn active" data-filter="all">All Providers</button>
+          </div>
+
+          <!-- Category Filters -->
+          <div class="model-filters" id="category-filters" style="margin-top: 8px;">
+            <button class="filter-btn active" data-category="all">All</button>
+            <button class="filter-btn" data-category="fast">Fast</button>
+            <button class="filter-btn" data-category="flagship">Flagship</button>
+            <button class="filter-btn" data-category="standard">Standard</button>
+            <button class="filter-btn" data-category="premium">Premium</button>
+          </div>
+
+          <!-- Model Cost Table -->
+          <div style="overflow-x: auto; margin-top: 12px;">
+            <table class="model-cost-table" id="model-cost-table">
+              <thead>
+                <tr>
+                  <th>Provider</th>
+                  <th>Model</th>
+                  <th>Category</th>
+                  <th>HTML Cost</th>
+                  <th>MV Cost</th>
+                  <th>Savings</th>
+                </tr>
+              </thead>
+              <tbody id="model-cost-tbody">
+                <tr><td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 20px;">Loading models...</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Best Value Models -->
+          <div class="savings-summary" style="margin-top: 12px;">
+            <h3>Best Value Models</h3>
+            <div id="best-value-models" style="font-size: 11px; color: var(--text-secondary);">
+              Loading recommendations...
+            </div>
           </div>
         </div>
       </div>
@@ -397,7 +408,6 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <span class="footer-text">Inspected: <span id="inspection-time">-</span></span>
       <a href="https://github.com/agent-ready-web" target="_blank" class="footer-link">
         Learn about ARW
       </a>
