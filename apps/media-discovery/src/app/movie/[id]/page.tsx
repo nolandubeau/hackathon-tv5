@@ -8,6 +8,7 @@ import { DetailHero } from '@/components/detail/DetailHero';
 import { CastSection } from '@/components/detail/CastSection';
 import { VideoSection } from '@/components/detail/VideoSection';
 import { RelatedSection } from '@/components/detail/RelatedSection';
+import { useAudio } from '@/hooks/useAudio';
 import type { Movie, Genre } from '@/types/media';
 import type { CastMember, CrewMember, Video } from '@/lib/tmdb';
 
@@ -32,6 +33,7 @@ export default function MoviePage({
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { playHover, playClick } = useAudio();
   const { id } = use(params);
   const movieId = parseInt(id, 10);
 
@@ -52,7 +54,7 @@ export default function MoviePage({
           <h1 className="text-2xl font-bold text-white mb-2">Movie Not Found</h1>
           <p className="text-gray-400 mb-4">The movie you&apos;re looking for doesn&apos;t exist.</p>
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,8 +75,10 @@ export default function MoviePage({
       <nav className="border-b border-gray-800 bg-gray-950/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
           <Link
-            href="/"
+            href="/home"
             className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            onMouseEnter={playHover}
+            onClick={playClick}
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -99,6 +103,8 @@ export default function MoviePage({
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors"
               aria-label="LLM-readable site index"
+              onMouseEnter={playHover}
+              onClick={playClick}
             >
               llms.txt
             </a>
@@ -108,6 +114,8 @@ export default function MoviePage({
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors"
               aria-label="ARW machine-readable API manifest"
+              onMouseEnter={playHover}
+              onClick={playClick}
             >
               ARW Manifest
             </a>
@@ -117,6 +125,8 @@ export default function MoviePage({
               rel="noopener noreferrer"
               className="text-gray-400 hover:text-white transition-colors"
               aria-label="Machine-readable version of this page"
+              onMouseEnter={playHover}
+              onClick={playClick}
             >
               Agent View
             </a>

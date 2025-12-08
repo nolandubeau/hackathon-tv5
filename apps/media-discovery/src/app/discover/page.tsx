@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import confetti from 'canvas-confetti';
 import { useDiscoveryStore, GENRES } from '@/lib/discovery-store';
+import { useAudio } from '@/hooks/useAudio';
 
 export default function DiscoverPage() {
   const router = useRouter();
@@ -28,15 +29,16 @@ export default function DiscoverPage() {
   const lastMousePos = useRef({ x: 0, y: 0, time: 0 });
   const confettiFiredRef = useRef(false);
   const [shuffledGenres, setShuffledGenres] = useState<typeof GENRES>([]);
+  const { playHover, playClick } = useAudio();
 
   const showContinueButton = totalTime > 8 || clickSequence.length >= 3;
 
   // Redirect if no name set or profile already complete
   useEffect(() => {
     if (!userName) {
-      router.push('/welcome');
+      router.replace('/welcome');
     } else if (profileComplete) {
-      router.push('/');
+      router.replace('/home');
     }
   }, [userName, profileComplete, router]);
 
@@ -98,7 +100,7 @@ export default function DiscoverPage() {
 
   const handleComplete = () => {
     completeProfile();
-    router.push('/');
+    router.push('/home');
   };
 
   return (
@@ -132,9 +134,15 @@ export default function DiscoverPage() {
                     borderColor: isClicked ? genre.color : 'transparent',
                     animationDelay: `${index * 50}ms`,
                   }}
-                  onMouseEnter={() => onHoverEnter(genre.id)}
+                  onMouseEnter={() => {
+                    playHover();
+                    onHoverEnter(genre.id);
+                  }}
                   onMouseLeave={() => onHoverLeave(genre.id)}
-                  onClick={() => onThumbnailClick(genre.id)}
+                  onClick={() => {
+                    playClick();
+                    onThumbnailClick(genre.id);
+                  }}
                 >
                   <img
                     src={genre.src}

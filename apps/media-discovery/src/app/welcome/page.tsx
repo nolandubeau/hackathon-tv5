@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useDiscoveryStore } from '@/lib/discovery-store';
+import { useAudio } from '@/hooks/useAudio';
 
 export default function WelcomePage() {
   const router = useRouter();
+  const { playHover, playClick } = useAudio();
   const [name, setName] = useState('');
   const [backgroundImage, setBackgroundImage] = useState('');
   const [gradientColor, setGradientColor] = useState('#4ECDC4');
@@ -15,7 +17,7 @@ export default function WelcomePage() {
   // Redirect to home if profile is already complete
   useEffect(() => {
     if (profileComplete) {
-      router.push('/');
+      router.replace('/home');
     }
   }, [profileComplete, router]);
 
@@ -81,7 +83,11 @@ export default function WelcomePage() {
 
             <button
               className="btn-primary w-full rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={handleContinue}
+              onClick={() => {
+                playClick();
+                handleContinue();
+              }}
+              onMouseEnter={playHover}
               disabled={!name.trim()}
             >
               Continue

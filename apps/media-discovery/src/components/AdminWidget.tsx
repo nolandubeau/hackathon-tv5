@@ -41,7 +41,7 @@ export function AdminWidget() {
         onClick={() => setIsCollapsed(!isCollapsed)}
       >
         <span className="text-text-secondary text-[0.625rem] uppercase tracking-widest font-medium">
-          Genre Leaderboard
+          Behavior Signals
         </span>
         <button className="text-text-secondary hover:text-text-primary transition-colors text-lg leading-none">
           {isCollapsed ? '+' : '−'}

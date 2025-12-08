@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { MediaContent } from '@/types/media';
 import { getPosterUrl } from '@/lib/tmdb';
+import { useAudio } from '@/hooks/useAudio';
 
 interface MediaCardProps {
   content: MediaContent;
@@ -24,6 +25,7 @@ const genreColorMap: Record<number, string> = {
 };
 
 export function MediaCard({ content, reason, index = 0 }: MediaCardProps) {
+  const { playHover, playClick } = useAudio();
   const posterUrl = getPosterUrl(content.posterPath);
   const href =
     content.mediaType === 'movie'
@@ -39,6 +41,8 @@ export function MediaCard({ content, reason, index = 0 }: MediaCardProps) {
       href={href}
       className="group block animate-card-reveal"
       style={{ animationDelay: `${index * 80}ms` }}
+      onMouseEnter={playHover}
+      onClick={playClick}
     >
       <div className="card-hover relative aspect-[2/3] rounded-lg overflow-hidden bg-bg-elevated border-2 border-transparent hover:border-accent-cyan/50">
         {posterUrl ? (

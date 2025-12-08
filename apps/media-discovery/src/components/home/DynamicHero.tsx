@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { getPosterUrl, getBackdropUrl } from '@/lib/tmdb';
+import { useAudio } from '@/hooks/useAudio';
 import type { Movie, TVShow } from '@/types/media';
 import type { RecommendationSource } from '@/lib/recommendation-service';
 import type { Genre as DiscoveryGenre } from '@/lib/discovery-store';
@@ -15,7 +16,9 @@ interface DynamicHeroProps {
 }
 
 export function DynamicHero({ content, source, preferences }: DynamicHeroProps) {
+  const { playHover, playClick } = useAudio();
   const [showWatchlistLabel, setShowWatchlistLabel] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const posterUrl = getPosterUrl(content.posterPath);
   const backdropUrl = getBackdropUrl(content.backdropPath);
 
@@ -66,8 +69,11 @@ export function DynamicHero({ content, source, preferences }: DynamicHeroProps) 
               alt={`${content.title} backdrop`}
               fill
               priority
-              className="object-cover"
+              className={`object-cover transition-opacity duration-700 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
               sizes="100vw"
+              onLoadingComplete={() => setImageLoaded(true)}
             />
             {/* Gradient overlays - Exactly like Backdrop component */}
             <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
@@ -197,6 +203,8 @@ export function DynamicHero({ content, source, preferences }: DynamicHeroProps) 
                 <Link
                   href={`/${content.mediaType}/${content.id}`}
                   className="inline-flex items-center gap-2 px-6 py-3 bg-accent-cyan hover:bg-accent-cyan/90 text-gray-950 font-medium rounded transition-colors"
+                  onMouseEnter={playHover}
+                  onClick={playClick}
                 >
                   <svg
                     className="w-5 h-5"
@@ -213,8 +221,12 @@ export function DynamicHero({ content, source, preferences }: DynamicHeroProps) 
                 </Link>
                 <button
                   className="relative inline-flex items-center gap-2 px-6 py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded transition-all overflow-hidden group"
-                  onMouseEnter={() => setShowWatchlistLabel(true)}
+                  onMouseEnter={() => {
+                    playHover();
+                    setShowWatchlistLabel(true);
+                  }}
                   onMouseLeave={() => setShowWatchlistLabel(false)}
+                  onClick={playClick}
                 >
                   <svg
                     className="w-5 h-5"

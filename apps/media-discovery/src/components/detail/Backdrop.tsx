@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Image from 'next/image';
 import { getBackdropUrl } from '@/lib/tmdb';
 
@@ -9,6 +10,7 @@ interface BackdropProps {
 }
 
 export function Backdrop({ path, title }: BackdropProps) {
+  const [imageLoaded, setImageLoaded] = useState(false);
   const backdropUrl = getBackdropUrl(path);
 
   return (
@@ -20,8 +22,11 @@ export function Backdrop({ path, title }: BackdropProps) {
             alt={`${title} backdrop`}
             fill
             priority
-            className="object-cover"
+            className={`object-cover transition-opacity duration-700 ${
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
             sizes="100vw"
+            onLoadingComplete={() => setImageLoaded(true)}
           />
           {/* Gradient overlays */}
           <div className="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/60 to-transparent" />
