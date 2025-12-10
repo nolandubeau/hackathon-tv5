@@ -1,0 +1,12 @@
+# LiveKit Agent SDK with Google/Gemini support
+livekit-agents[google]~=1.2
+livekit-plugins-silero~=1.0
+livekit-plugins-noise-cancellation~=0.2
+livekit-plugins-turn-detector~=1.0
+
+# Environment and utilities
+python-dotenv>=1.0.0
+httpx>=0.27.0
+
+# For TMDB API integration
+aiohttp>=3.9.0

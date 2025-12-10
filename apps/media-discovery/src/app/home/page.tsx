@@ -8,6 +8,7 @@ import { TrendingSection } from '@/components/TrendingSection';
 import { RecommendationsSection } from '@/components/RecommendationsSection';
 import { AdminWidget } from '@/components/AdminWidget';
 import { DynamicHero } from '@/components/home/DynamicHero';
+import { VoiceAssistantFAB } from '@/components/VoiceAssistant';
 import { useDiscoveryStore } from '@/lib/discovery-store';
 import { getRecommendationWithSource } from '@/lib/recommendation-service';
 import { useAudio } from '@/hooks/useAudio';
@@ -88,11 +89,21 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Handle voice search results
+  const handleVoiceSearchResult = (query: string) => {
+    if (query) {
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+    }
+  };
+
   // Always show the main app, allow browsing without profile
   return (
     <main className="min-h-screen">
         {/* Admin Widget - Development Only */}
         {process.env.NODE_ENV === 'development' && <AdminWidget />}
+
+        {/* Voice Assistant FAB */}
+        <VoiceAssistantFAB onSearchResult={handleVoiceSearchResult} />
 
         {/* Minimal Floating Header - Only Search & Profile Circle */}
         <div className="fixed top-0 right-0 z-20 p-4 flex items-center gap-3">
