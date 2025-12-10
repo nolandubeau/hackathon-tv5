@@ -69,11 +69,13 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  */
 function handleInspectionComplete(data, sender) {
   if (sender.tab?.id) {
-    // Store inspection data for this tab
+    // Store inspection data for this tab (overwrites any stale data)
     tabInspections.set(sender.tab.id, {
       ...data,
       tabId: sender.tab.id,
-      tabUrl: sender.tab.url
+      tabUrl: sender.tab.url,
+      stale: false,
+      loading: false
     });
 
     console.log('ARW Inspection Complete:', {
@@ -221,13 +223,33 @@ chrome.tabs.onRemoved.addListener(async (tabId) => {
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
   if (changeInfo.status === 'loading') {
-    // Clear old inspection data when navigating to new page
+    // Mark old data as stale but don't delete it yet
+    // This allows the sidepanel to show old data while new inspection runs
     if (tabInspections.has(tabId)) {
-      tabInspections.delete(tabId);
+      const existingData = tabInspections.get(tabId);
+      existingData.stale = true;
+      existingData.loading = true;
     }
 
-    // Reset badge
-    chrome.action.setBadgeText({ tabId, text: '' });
+    // Reset badge to show loading state
+    chrome.action.setBadgeText({ tabId, text: '...' });
+    chrome.action.setBadgeBackgroundColor({ tabId, color: '#94a3b8' });
+  } else if (changeInfo.status === 'complete') {
+    // If we still have stale data after page load completes, clear it
+    // This handles cases where content script didn't run (e.g., chrome:// pages)
+    if (tabInspections.has(tabId)) {
+      const data = tabInspections.get(tabId);
+      if (data.stale && data.loading) {
+        // Content script should have updated by now
+        // If still marked as loading, the page might not be ARW-compatible
+        setTimeout(() => {
+          if (tabInspections.has(tabId) && tabInspections.get(tabId).stale) {
+            tabInspections.delete(tabId);
+            chrome.action.setBadgeText({ tabId, text: '' });
+          }
+        }, 2000);
+      }
+    }
   }
 });
 

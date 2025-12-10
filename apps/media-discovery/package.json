@@ -12,7 +12,8 @@
     "test": "vitest",
     "test:coverage": "vitest --coverage",
     "embed:sync": "tsx scripts/sync-embeddings.ts",
-    "deploy": "gcloud run deploy media-discovery --source ."
+    "deploy": "cd ../.. && gcloud builds submit --config apps/media-discovery/cloudbuild.yaml --project agentics-foundation",
+    "deploy:docker": "cd ../.. && docker build -t media-discovery -f Dockerfile.media-discovery . && gcloud run deploy media-discovery --image media-discovery --region us-central1 --project agentics-foundation --allow-unauthenticated"
   },
   "dependencies": {
     "@agent-ready-web/nextjs-plugin": "file:../../packages/nextjs-plugin",

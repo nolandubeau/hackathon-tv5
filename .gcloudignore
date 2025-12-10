@@ -1,0 +1,47 @@
+# Compiled output
+node_modules/
+dist/
+build/
+.next/
+.turbo/
+
+# Development files
+.git/
+.github/
+*.log
+npm-debug.log*
+.env*.local
+.DS_Store
+
+# Test files
+coverage/
+*.test.ts
+*.test.js
+*.spec.ts
+*.spec.js
+__tests__/
+test/
+tests/
+
+# Documentation
+README.md
+*.md
+!CLAUDE.md
+docs/
+ai_docs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Misc
+.changeset/
+.claude/
+.claude-flow/
+.hive-mind/
+.swarm/
+plans/
+specs/
+coordination/

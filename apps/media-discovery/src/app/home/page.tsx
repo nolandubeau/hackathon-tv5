@@ -27,7 +27,7 @@ export default function HomePage() {
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const hasFetchedHero = useRef(false);
   const [heroContent, setHeroContent] = useState<{ content: Movie | TVShow; source: RecommendationSource } | null>(null);
-  const [isLoadingHero, setIsLoadingHero] = useState(false);
+  const [isLoadingHero, setIsLoadingHero] = useState(true); // Start as true to show initial loading state
   const [showSearch, setShowSearch] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
 
@@ -66,13 +66,16 @@ export default function HomePage() {
   useEffect(() => {
     if (!hasFetchedHero.current) {
       hasFetchedHero.current = true;
-      setIsLoadingHero(true);
+
       // Get genres at the time of fetch
       const genresForFetch = getGenreScores().slice(0, 2);
+
       getRecommendationWithSource(genresForFetch)
         .then((result) => {
           if (result) {
             setHeroContent(result);
+          } else {
+            console.warn('No hero content returned from recommendation service');
           }
         })
         .catch((error) => {

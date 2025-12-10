@@ -1,0 +1,82 @@
+# Multi-stage build for AI Media Discovery Platform
+# Optimized for Google Cloud Run deployment from monorepo root
+
+# Stage 1: Build local package dependency
+FROM node:20-alpine AS plugin-builder
+RUN apk add --no-cache libc6-compat
+WORKDIR /workspace/packages/nextjs-plugin
+
+# Copy plugin source and package files
+COPY packages/nextjs-plugin/package.json packages/nextjs-plugin/package-lock.json ./
+COPY packages/nextjs-plugin ./
+
+# Install plugin dependencies and build
+RUN npm ci && npm run build
+
+# Stage 2: Dependencies
+FROM node:20-alpine AS deps
+RUN apk add --no-cache libc6-compat
+WORKDIR /workspace
+
+# Copy the built local package dependency
+COPY --from=plugin-builder /workspace/packages/nextjs-plugin ./packages/nextjs-plugin
+
+# Copy app package files maintaining directory structure
+COPY apps/media-discovery/package.json ./apps/media-discovery/package.json
+COPY apps/media-discovery/package-lock.json ./apps/media-discovery/package-lock.json
+
+# Install dependencies from the app directory
+WORKDIR /workspace/apps/media-discovery
+RUN npm ci
+
+# Stage 3: Builder
+FROM node:20-bookworm-slim AS builder
+WORKDIR /workspace
+
+# Install required system libraries for native modules
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy built local package dependency
+COPY --from=plugin-builder /workspace/packages/nextjs-plugin ./packages/nextjs-plugin
+
+# Copy dependencies from deps stage
+COPY --from=deps /workspace/apps/media-discovery/node_modules ./apps/media-discovery/node_modules
+
+# Copy app source
+COPY apps/media-discovery ./apps/media-discovery
+
+# Build the application
+WORKDIR /workspace/apps/media-discovery
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+
+RUN npm run build
+
+# Stage 4: Runner
+FROM node:20-bookworm-slim AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+
+# Create non-root user
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd --system --uid 1001 --gid nodejs nextjs
+
+# Copy built application
+COPY --from=builder /workspace/apps/media-discovery/public ./public
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/media-discovery/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /workspace/apps/media-discovery/.next/static ./.next/static
+
+USER nextjs
+
+# Cloud Run uses PORT environment variable
+EXPOSE 8080
+ENV PORT=8080
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]

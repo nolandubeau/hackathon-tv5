@@ -262,19 +262,25 @@
 
     // Listen for tab updates
     chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-      if (changeInfo.status === 'complete' && tab.active) {
+      if (changeInfo.status === 'loading' && tab.active) {
+        // Reset retry count when starting navigation
+        retryCount = 0;
+      } else if (changeInfo.status === 'complete' && tab.active) {
+        // Wait a bit for content script to run, then load data
         setTimeout(async () => {
           const [activeTab] = await chrome.tabs.query({ active: true, currentWindow: true });
           const timeSinceLastData = Date.now() - lastDataReceivedTime;
           const needsReload = !currentData ||
                              currentData.tabId !== activeTab.id ||
+                             currentData.stale ||
                              timeSinceLastData > 2000;
 
           if (activeTab && needsReload) {
             currentTabId = activeTab.id;
+            retryCount = 0; // Reset retry counter for new page
             loadInspectionData();
           }
-        }, 500);
+        }, 300); // Reduced from 500ms to 300ms for faster response
       }
     });
 
@@ -342,7 +348,7 @@
       if (tab?.id && tab.url && !tab.url.startsWith('chrome://')) {
         await chrome.scripting.executeScript({
           target: { tabId: tab.id },
-          files: ['content/content-script.js']
+          files: ['src/content/content-script.js']
         });
       }
     } catch (error) {
@@ -373,7 +379,17 @@
    * Update header with page info and compliance
    */
   function updateHeader(data) {
-    document.getElementById('page-url').textContent = data.url;
+    const urlElement = document.getElementById('page-url');
+    urlElement.textContent = data.url;
+
+    // Show indicator if data is stale (from previous page)
+    if (data.stale) {
+      urlElement.style.opacity = '0.6';
+      urlElement.title = 'Loading new page data...';
+    } else {
+      urlElement.style.opacity = '1';
+      urlElement.title = data.url;
+    }
 
     // Calculate ARW compliance level
     const arwLevel = calculateARWLevel(data);
